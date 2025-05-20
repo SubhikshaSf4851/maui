@@ -205,6 +205,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			{
 				ScrollHelper.JumpScrollToPosition(position, args.ScrollToPosition);
 			}
+			UpdatePosition(position);
 		}
 
 		void UnsubscribeCollectionItemsSourceChanged(ItemsViewAdapter<CarouselView, IItemsViewSource> oldItemViewAdapter)
@@ -483,6 +484,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		void UpdatePosition(int position)
 		{
+			if (Carousel.IsScrolling)
+				return;
+
 			var carouselPosition = Carousel.Position;
 
 			// We arrived center
