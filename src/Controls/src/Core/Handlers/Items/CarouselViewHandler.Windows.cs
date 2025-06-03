@@ -14,6 +14,8 @@ using WScrollBarVisibility = Microsoft.UI.Xaml.Controls.ScrollBarVisibility;
 using WScrollMode = Microsoft.UI.Xaml.Controls.ScrollMode;
 using WSnapPointsAlignment = Microsoft.UI.Xaml.Controls.Primitives.SnapPointsAlignment;
 using WSnapPointsType = Microsoft.UI.Xaml.Controls.SnapPointsType;
+using WSetter = Microsoft.UI.Xaml.Setter;
+using WStyle = Microsoft.UI.Xaml.Style;
 
 namespace Microsoft.Maui.Controls.Handlers.Items
 {
@@ -160,7 +162,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 				listView = new FormsListView()
 				{
 					Style = (UI.Xaml.Style)WApp.Current.Resources["HorizontalCarouselListStyle"],
-					ItemsPanel = (ItemsPanelTemplate)WApp.Current.Resources["HorizontalListItemsPanel"]
+					ItemsPanel = (ItemsPanelTemplate)WApp.Current.Resources["HorizontalListItemsPanel"],
+					ItemContainerStyle = GetHorizontalItemContainerStyle(CarouselItemsLayout as LinearItemsLayout)
 				};
 
 				ScrollViewer.SetHorizontalScrollBarVisibility(listView, WScrollBarVisibility.Auto);
@@ -180,6 +183,16 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			listView.Padding = WinUIHelpers.CreateThickness(ItemsView.PeekAreaInsets.Left, ItemsView.PeekAreaInsets.Top, ItemsView.PeekAreaInsets.Right, ItemsView.PeekAreaInsets.Bottom);
 
 			return listView;
+		}
+		static WStyle GetHorizontalItemContainerStyle(LinearItemsLayout layout)
+		{
+			var h = layout?.ItemSpacing ?? 0;
+			var padding = WinUIHelpers.CreateThickness(h, 0, h, 0);
+
+			var style = new WStyle(typeof(ListViewItem));
+			style.Setters.Add(new WSetter(Control.PaddingProperty, padding));
+			style.Setters.Add(new WSetter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Stretch));
+			return style;
 		}
 
 		public static void MapCurrentItem(CarouselViewHandler handler, CarouselView carouselView)
