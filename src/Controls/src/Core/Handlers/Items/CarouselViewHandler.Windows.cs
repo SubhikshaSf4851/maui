@@ -181,7 +181,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			{
 				listView = new FormsListView()
 				{
-					Style = (UI.Xaml.Style)WApp.Current.Resources["VerticalCarouselListStyle"]
+					Style = (UI.Xaml.Style)WApp.Current.Resources["VerticalCarouselListStyle"],
+					ItemContainerStyle = GetVerticalItemContainerStyle(CarouselItemsLayout as LinearItemsLayout),
 				};
 
 				ScrollViewer.SetHorizontalScrollBarVisibility(listView, WScrollBarVisibility.Disabled);
@@ -606,6 +607,15 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		{
 			var h = layout?.ItemSpacing > 0 ? (layout.ItemSpacing)/2 : 0;
 			var padding = WinUIHelpers.CreateThickness(h, 0, h, 0);
+
+			var style = new WStyle(typeof(ListViewItem));
+			style.Setters.Add(new WSetter(Control.PaddingProperty, padding));
+			return style;
+		}
+		static WStyle GetVerticalItemContainerStyle(LinearItemsLayout layout)
+		{
+			var h = layout?.ItemSpacing > 0 ? (layout.ItemSpacing) / 2 : 0;
+			var padding = WinUIHelpers.CreateThickness(0, h, 0, h);
 
 			var style = new WStyle(typeof(ListViewItem));
 			style.Setters.Add(new WSetter(Control.PaddingProperty, padding));
