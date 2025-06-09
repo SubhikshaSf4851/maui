@@ -604,7 +604,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		}
 		static WStyle GetHorizontalItemContainerStyle(LinearItemsLayout layout)
 		{
-			var h = layout?.ItemSpacing ?? 0;
+			var h = layout?.ItemSpacing > 0 ? (layout.ItemSpacing)/2 : 0;
 			var padding = WinUIHelpers.CreateThickness(h, 0, h, 0);
 
 			var style = new WStyle(typeof(ListViewItem));
