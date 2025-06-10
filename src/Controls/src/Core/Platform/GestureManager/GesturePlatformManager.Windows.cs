@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Controls.Internals;
@@ -16,6 +17,9 @@ namespace Microsoft.Maui.Controls.Platform
 {
 	class GesturePlatformManager : IDisposable
 	{
+		int _taps;
+		DateTime _tapTime;
+
 		readonly IPlatformViewHandler _handler;
 		readonly NotifyCollectionChangedEventHandler _collectionChangedHandler;
 		readonly List<uint> _fingers = new List<uint>();
@@ -94,6 +98,8 @@ namespace Microsoft.Maui.Controls.Platform
 			{
 				return Element switch
 				{
+					Image => true,
+					Label => true,
 					Button => true,
 					CheckBox => true,
 					DatePicker => true,
@@ -685,6 +691,7 @@ namespace Microsoft.Maui.Controls.Platform
 
 		void OnTap(object sender, RoutedEventArgs e)
 		{
+			Debug.WriteLine("On Tap Called");
 			var view = Element as View;
 			if (view == null)
 			{
@@ -702,7 +709,12 @@ namespace Microsoft.Maui.Controls.Platform
 			{
 				return;
 			}
+				
+			if(_taps == 0)
+				_tapTime = DateTime.Now;
+			_taps++;
 
+			Debug.WriteLine("tap value" + _taps);
 			var children =
 				(view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y))?.
 				GetChildGesturesFor<TapGestureRecognizer>(ValidateGesture);
@@ -713,6 +725,7 @@ namespace Microsoft.Maui.Controls.Platform
 			}
 
 			IEnumerable<TapGestureRecognizer> tapGestures = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>(ValidateGesture);
+			
 			ProcessGestureRecognizers(tapGestures);
 
 			bool ProcessGestureRecognizers(IEnumerable<TapGestureRecognizer>? tapGestures)
@@ -725,10 +738,29 @@ namespace Microsoft.Maui.Controls.Platform
 
 				foreach (var recognizer in tapGestures)
 				{
-					recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
-
-					e.SetHandled(true);
-					handled = true;
+					Debug.WriteLine((DateTime.Now < _tapTime.AddMilliseconds(1000)) + "tapTime");
+					if (_taps > 0 && DateTime.Now < _tapTime.AddMilliseconds(1000))
+					{
+						if (_taps == recognizer.NumberOfTapsRequired)
+						{
+							_taps = 0;
+							Debug.WriteLine("Send Tapped");
+							recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
+							
+							e.SetHandled(true);
+							handled = true;
+						}
+						else
+						{
+							Debug.WriteLine(_taps + "tapTime");
+							_tapTime = DateTime.Now;
+						}
+					}
+					else
+					{
+						Debug.WriteLine("Else Executed, Tap becomes zero");
+						_taps = 0;
+					}
 				}
 
 				return handled;
@@ -736,6 +768,7 @@ namespace Microsoft.Maui.Controls.Platform
 
 			bool ValidateGesture(TapGestureRecognizer g)
 			{
+			
 				if (e is RightTappedRoutedEventArgs)
 				{
 					// Currently we only support single right clicks
@@ -752,10 +785,10 @@ namespace Microsoft.Maui.Controls.Platform
 				if ((g.Buttons & ButtonsMask.Primary) != ButtonsMask.Primary)
 					return false;
 
-				if (e is DoubleTappedRoutedEventArgs)
-					return g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2;
+				//if (e is DoubleTappedRoutedEventArgs)
+				//	return g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2;
 
-				return g.NumberOfTapsRequired == 1;
+				return g.NumberOfTapsRequired >= 1;
 			}
 		}
 
@@ -904,7 +937,7 @@ namespace Microsoft.Maui.Controls.Platform
 				if (_control is not null && PreventGestureBubbling)
 				{
 					_subscriptionFlags |= SubscriptionFlags.ControlTapEventSubscribed;
-					_control.Tapped += HandleTapped;
+					_control.Tapped += OnTap;
 				}
 			}
 
