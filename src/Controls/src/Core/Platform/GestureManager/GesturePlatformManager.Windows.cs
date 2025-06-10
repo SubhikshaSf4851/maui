@@ -19,6 +19,7 @@ namespace Microsoft.Maui.Controls.Platform
 	{
 		int _taps;
 		DateTime _tapTime;
+		int _numberOfTapsRequired;
 
 		readonly IPlatformViewHandler _handler;
 		readonly NotifyCollectionChangedEventHandler _collectionChangedHandler;
@@ -98,8 +99,6 @@ namespace Microsoft.Maui.Controls.Platform
 			{
 				return Element switch
 				{
-					Image => true,
-					Label => true,
 					Button => true,
 					CheckBox => true,
 					DatePicker => true,
@@ -391,7 +390,10 @@ namespace Microsoft.Maui.Controls.Platform
 						_container.DoubleTapped -= OnTap;
 					}
 				}
-
+				if (_numberOfTapsRequired > 2)
+				{
+					_container.Tapped -= OnMultiTap;
+				}
 				if ((_subscriptionFlags & SubscriptionFlags.ContainerPgrPointerEventsSubscribed) != 0)
 				{
 					_subscriptionFlags &= ~SubscriptionFlags.ContainerPgrPointerEventsSubscribed;
@@ -691,7 +693,6 @@ namespace Microsoft.Maui.Controls.Platform
 
 		void OnTap(object sender, RoutedEventArgs e)
 		{
-			Debug.WriteLine("On Tap Called");
 			var view = Element as View;
 			if (view == null)
 			{
@@ -709,12 +710,7 @@ namespace Microsoft.Maui.Controls.Platform
 			{
 				return;
 			}
-				
-			if(_taps == 0)
-				_tapTime = DateTime.Now;
-			_taps++;
 
-			Debug.WriteLine("tap value" + _taps);
 			var children =
 				(view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y))?.
 				GetChildGesturesFor<TapGestureRecognizer>(ValidateGesture);
@@ -738,29 +734,10 @@ namespace Microsoft.Maui.Controls.Platform
 
 				foreach (var recognizer in tapGestures)
 				{
-					Debug.WriteLine((DateTime.Now < _tapTime.AddMilliseconds(1000)) + "tapTime");
-					if (_taps > 0 && DateTime.Now < _tapTime.AddMilliseconds(1000))
-					{
-						if (_taps == recognizer.NumberOfTapsRequired)
-						{
-							_taps = 0;
-							Debug.WriteLine("Send Tapped");
-							recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
-							
-							e.SetHandled(true);
-							handled = true;
-						}
-						else
-						{
-							Debug.WriteLine(_taps + "tapTime");
-							_tapTime = DateTime.Now;
-						}
-					}
-					else
-					{
-						Debug.WriteLine("Else Executed, Tap becomes zero");
-						_taps = 0;
-					}
+					recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
+
+					e.SetHandled(true);
+					handled = true;
 				}
 
 				return handled;
@@ -785,10 +762,113 @@ namespace Microsoft.Maui.Controls.Platform
 				if ((g.Buttons & ButtonsMask.Primary) != ButtonsMask.Primary)
 					return false;
 
-				//if (e is DoubleTappedRoutedEventArgs)
-				//	return g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2;
+				if (e is DoubleTappedRoutedEventArgs)
+					return g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2;
 
-				return g.NumberOfTapsRequired >= 1;
+				return g.NumberOfTapsRequired == 1;
+			}
+		}
+
+
+		//Custom Logic for Taps greater than two
+		void OnMultiTap(object sender, RoutedEventArgs e)
+		{
+			Debug.WriteLine("On Multi Tap Called");
+			var view = Element as View;
+			if (view == null)
+			{
+				return;
+			}
+
+			if (!view.IsEnabled)
+			{
+				return;
+			}
+
+			var tapPosition = e.GetPositionRelativeToPlatformElement(Control);
+
+			if (tapPosition == null)
+			{
+				return;
+			}
+
+			if (_taps == 0)
+				_tapTime = DateTime.Now;
+			_taps++;
+
+			Debug.WriteLine("tap value" + _taps);
+			var children =
+				(view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y))?.
+				GetChildGesturesFor<TapGestureRecognizer>(ValidateGesture);
+
+			if (ProcessGestureRecognizers(children))
+			{
+				return;
+			}
+
+			IEnumerable<TapGestureRecognizer> tapGestures = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>(ValidateGesture);
+
+			ProcessGestureRecognizers(tapGestures);
+
+			bool ProcessGestureRecognizers(IEnumerable<TapGestureRecognizer>? tapGestures)
+			{
+				bool handled = false;
+				Debug.WriteLine("ProcessGestureRecognizers called, gesture value - " + tapGestures);
+				if (tapGestures == null)
+				{
+					return handled;
+				}
+
+				foreach (var recognizer in tapGestures)
+				{
+					Debug.WriteLine((DateTime.Now < _tapTime.AddMilliseconds(1000)) + "tapTime");
+					if (_taps > 0 && DateTime.Now < _tapTime.AddMilliseconds(1000))
+					{
+						if (_taps == recognizer.NumberOfTapsRequired)
+						{
+							_taps = 0;
+							Debug.WriteLine("Send Tapped");
+							recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
+
+							e.SetHandled(true);
+							handled = true;
+						}
+						else
+						{
+							Debug.WriteLine(_taps + "tapTime");
+							_tapTime = DateTime.Now;
+						}
+					}
+					else
+					{
+						Debug.WriteLine("Else Executed, Tap becomes zero");
+						_taps = 0;
+					}
+				}
+
+				return handled;
+			}
+
+			bool ValidateGesture(TapGestureRecognizer g)
+			{
+				_numberOfTapsRequired = g.NumberOfTapsRequired; //used for unwire OnMultiTap
+				if (e is RightTappedRoutedEventArgs)
+				{
+					// Currently we only support single right clicks
+					if ((g.Buttons & ButtonsMask.Secondary) == ButtonsMask.Secondary)
+					{
+						return g.NumberOfTapsRequired == 1;
+					}
+					else
+					{
+						return false;
+					}
+				}
+
+				if ((g.Buttons & ButtonsMask.Primary) != ButtonsMask.Primary)
+					return false;
+
+				return g.NumberOfTapsRequired > 2; //Returing true as taps greater than 2 is valid.
 			}
 		}
 
@@ -915,6 +995,23 @@ namespace Microsoft.Maui.Controls.Platform
 
 			var children = (view as IGestureController)?.GetChildElements(Point.Zero);
 
+			//Custom logics for taps greater than two.
+			if (gestures.HasAnyGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired > 2)
+				|| children?.GetChildGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired > 2).Any() == true)
+			{
+				_subscriptionFlags |= SubscriptionFlags.ContainerTapAndRightTabEventSubscribed;
+
+				if (_control is TextBox)
+				{
+					_tappedEventHandler = new TappedEventHandler(OnMultiTap);
+					_container.AddHandler(FrameworkElement.TappedEvent, _tappedEventHandler, true);
+				}
+				else
+				{
+					_container.Tapped += OnMultiTap;
+				}
+			}
+
 			if (gestures.HasAnyGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 1)
 				|| children?.GetChildGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 1).Any() == true)
 			{
@@ -937,7 +1034,7 @@ namespace Microsoft.Maui.Controls.Platform
 				if (_control is not null && PreventGestureBubbling)
 				{
 					_subscriptionFlags |= SubscriptionFlags.ControlTapEventSubscribed;
-					_control.Tapped += OnTap;
+					_control.Tapped += HandleTapped;
 				}
 			}
 
