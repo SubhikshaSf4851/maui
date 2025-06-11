@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Android.Views;
 using Microsoft.Maui.Controls.Internals;
@@ -9,6 +10,9 @@ namespace Microsoft.Maui.Controls.Platform
 {
 	internal class TapGestureHandler
 	{
+		int _taps;
+		DateTime _tapTime;
+		int _numberOfTapsRequired;
 		public TapGestureHandler(Func<View?> getView, Func<IList<GestureElement>> getChildElements)
 		{
 			GetView = getView;
@@ -40,6 +44,11 @@ namespace Microsoft.Maui.Controls.Platform
 
 			if (view == null)
 				return false;
+			if (_taps == 0)
+			{
+				_tapTime = DateTime.Now;
+			}
+			_taps++;  //track no of taps done by user.
 
 			var captured = false;
 
@@ -60,14 +69,50 @@ namespace Microsoft.Maui.Controls.Platform
 			if (captured)
 				return captured;
 
-			IEnumerable<TapGestureRecognizer> gestureRecognizers = TapGestureRecognizers(count);
-			foreach (var gestureRecognizer in gestureRecognizers)
+			IEnumerable<TapGestureRecognizer> tapGestures = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>();
+			GetNumberOfTapsRequired(tapGestures.FirstOrDefault() ?? new TapGestureRecognizer());
+			// Debug.WriteLine("_numberOfTapsRequired: " + _numberOfTapsRequired);
+			if (_numberOfTapsRequired < 2)
 			{
-				if (!CheckButtonMask(gestureRecognizer, e))
-					continue;
+				Debug.WriteLine("TapGestureHandler count value: " + count);
+				TriggerGestures(count);
+			}
+			else
+			{
+				Debug.WriteLine((DateTime.Now < _tapTime.AddMilliseconds(1000)) + "tapTime");
+				if (_taps > 0 && DateTime.Now < _tapTime.AddMilliseconds(1000))
+				{
+					if (_taps == _numberOfTapsRequired)
+					{
+						TriggerGestures(_taps);
+						_taps = 0; // Reset taps after processing
+					}
+					else
+					{
+						Debug.WriteLine(_taps + "tapTime");
+						_tapTime = DateTime.Now;
+					}
+				}
+				else
+				{
+					Debug.WriteLine("Else Executed, Tap becomes zero");
+					_taps = 0;
+				}
+			}
 
-				gestureRecognizer.SendTapped(view, (view) => e.CalculatePosition(GetView(), view));
-				captured = true;
+			void TriggerGestures(int count)
+			{
+				IEnumerable<TapGestureRecognizer> gestureRecognizers = Enumerable.Empty<TapGestureRecognizer>();
+				gestureRecognizers = TapGestureRecognizers(count);
+				foreach (var gestureRecognizer in gestureRecognizers)
+				{
+					if (!CheckButtonMask(gestureRecognizer, e))
+						continue;
+
+					gestureRecognizer.SendTapped(view, (view) => e.CalculatePosition(GetView(), view));
+					Debug.WriteLine("Tapped triggered ");
+					captured = true;
+				}
 			}
 
 			return captured;
@@ -84,6 +129,11 @@ namespace Microsoft.Maui.Controls.Platform
 				}
 
 				return (tapGestureRecognizer.Buttons & ButtonsMask.Primary) == ButtonsMask.Primary;
+			}
+
+			void GetNumberOfTapsRequired(TapGestureRecognizer g)
+			{
+				_numberOfTapsRequired = g.NumberOfTapsRequired;
 			}
 		}
 
