@@ -16,6 +16,8 @@ namespace Microsoft.Maui.Controls.Platform
 {
 	class GesturePlatformManager : IDisposable
 	{
+		int taps;
+		DateTime tapTime;
 		readonly IPlatformViewHandler _handler;
 		readonly NotifyCollectionChangedEventHandler _collectionChangedHandler;
 		readonly List<uint> _fingers = new List<uint>();
@@ -686,7 +688,7 @@ namespace Microsoft.Maui.Controls.Platform
 		void OnTap(object sender, RoutedEventArgs e)
 		{
 			var view = Element as View;
-			if (view == null)
+			if (view is null)
 			{
 				return;
 			}
@@ -698,11 +700,16 @@ namespace Microsoft.Maui.Controls.Platform
 
 			var tapPosition = e.GetPositionRelativeToPlatformElement(Control);
 
-			if (tapPosition == null)
+			if (tapPosition is null)
 			{
 				return;
 			}
 
+			if (taps == 0)
+			{
+				tapTime = DateTime.Now;
+			}
+			taps++;
 			var children =
 				(view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y))?.
 				GetChildGesturesFor<TapGestureRecognizer>(ValidateGesture);
@@ -718,17 +725,41 @@ namespace Microsoft.Maui.Controls.Platform
 			bool ProcessGestureRecognizers(IEnumerable<TapGestureRecognizer>? tapGestures)
 			{
 				bool handled = false;
-				if (tapGestures == null)
+				if (tapGestures is null)
 				{
 					return handled;
 				}
 
 				foreach (var recognizer in tapGestures)
 				{
-					recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
+					if (recognizer.NumberOfTapsRequired <= 2)
+					{
+						recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
 
-					e.SetHandled(true);
-					handled = true;
+						e.SetHandled(true);
+						handled = true;
+					}
+					else
+					{
+						if (taps > 0 && DateTime.Now < tapTime.AddMilliseconds(1000))
+						{
+							if (taps == recognizer.NumberOfTapsRequired)
+							{
+								recognizer.SendTapped(view, (relativeTo) => GetPosition(relativeTo, e));
+								taps = 0;
+								e.SetHandled(true);
+								handled = true;
+							}
+							else
+							{
+								tapTime = DateTime.Now;
+							}
+						}
+						else
+						{
+							taps = 0;
+						}
+					}
 				}
 
 				return handled;
@@ -751,6 +782,11 @@ namespace Microsoft.Maui.Controls.Platform
 
 				if ((g.Buttons & ButtonsMask.Primary) != ButtonsMask.Primary)
 					return false;
+
+				if (g.NumberOfTapsRequired > 2)
+				{
+					return true;
+				}
 
 				if (e is DoubleTappedRoutedEventArgs)
 					return g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2;
@@ -882,7 +918,7 @@ namespace Microsoft.Maui.Controls.Platform
 
 			var children = (view as IGestureController)?.GetChildElements(Point.Zero);
 
-			if (gestures.HasAnyGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 1)
+			if (gestures.HasAnyGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired > 2)
 				|| children?.GetChildGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 1).Any() == true)
 			{
 				_subscriptionFlags |= SubscriptionFlags.ContainerTapAndRightTabEventSubscribed;

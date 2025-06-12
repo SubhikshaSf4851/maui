@@ -9,6 +9,9 @@ namespace Microsoft.Maui.Controls.Platform
 {
 	internal class TapGestureHandler
 	{
+		int taps;
+		DateTime tapTime;
+		int numberOfTapsRequired;
 		public TapGestureHandler(Func<View?> getView, Func<IList<GestureElement>> getChildElements)
 		{
 			GetView = getView;
@@ -40,12 +43,16 @@ namespace Microsoft.Maui.Controls.Platform
 
 			if (view == null)
 				return false;
+			if (taps == 0)
+			{
+				tapTime = DateTime.Now;
+			}
+			taps++;
 
 			var captured = false;
 
 			var children = view.GetChildElements(point);
-
-			if (children != null)
+			if (children is not null)
 			{
 				foreach (var recognizer in children.GetChildGesturesFor<TapGestureRecognizer>(recognizer => recognizer.NumberOfTapsRequired == count))
 				{
@@ -58,16 +65,56 @@ namespace Microsoft.Maui.Controls.Platform
 			}
 
 			if (captured)
-				return captured;
-
-			IEnumerable<TapGestureRecognizer> gestureRecognizers = TapGestureRecognizers(count);
-			foreach (var gestureRecognizer in gestureRecognizers)
 			{
-				if (!CheckButtonMask(gestureRecognizer, e))
-					continue;
+				return captured;
+			}
 
-				gestureRecognizer.SendTapped(view, (view) => e.CalculatePosition(GetView(), view));
-				captured = true;
+			foreach (var gesture in view.GestureRecognizers)
+			{
+				if (gesture is TapGestureRecognizer tap && tap.NumberOfTapsRequired > 0)
+				{
+					numberOfTapsRequired = tap.NumberOfTapsRequired;
+				}
+			}
+
+			if (numberOfTapsRequired < 2)
+			{
+				TriggerGestures(count);
+			}
+			else
+			{
+				if (taps > 0 && DateTime.Now < tapTime.AddMilliseconds(1000))
+				{
+					if (taps == numberOfTapsRequired)
+					{
+						TriggerGestures(taps);
+						taps = 0;
+					}
+					else
+					{
+						tapTime = DateTime.Now;
+					}
+				}
+				else
+				{
+					taps = 0;
+				}
+			}
+
+			void TriggerGestures(int count)
+			{
+				IEnumerable<TapGestureRecognizer> gestureRecognizers = Enumerable.Empty<TapGestureRecognizer>();
+				gestureRecognizers = TapGestureRecognizers(count);
+				foreach (var gestureRecognizer in gestureRecognizers)
+				{
+					if (!CheckButtonMask(gestureRecognizer, e))
+					{
+						continue;
+					}
+
+					gestureRecognizer.SendTapped(view, (view) => e.CalculatePosition(GetView(), view));
+					captured = true;
+				}
 			}
 
 			return captured;
