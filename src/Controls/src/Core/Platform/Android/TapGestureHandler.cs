@@ -41,13 +41,10 @@ namespace Microsoft.Maui.Controls.Platform
 
 			var view = GetView();
 
-			if (view == null)
-				return false;
-			if (taps == 0)
+			if (view is null)
 			{
-				tapTime = DateTime.Now;
+				return false;
 			}
-			taps++;
 
 			var captured = false;
 
@@ -83,7 +80,14 @@ namespace Microsoft.Maui.Controls.Platform
 			}
 			else
 			{
-				if (taps > 0 && DateTime.Now < tapTime.AddMilliseconds(1000))
+				if (taps == 0)
+				{
+					tapTime = DateTime.Now;
+				}
+
+				taps++;
+
+				if (DateTime.Now < tapTime.AddMilliseconds(1000))
 				{
 					if (taps == numberOfTapsRequired)
 					{

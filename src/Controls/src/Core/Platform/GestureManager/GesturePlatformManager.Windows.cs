@@ -705,11 +705,6 @@ namespace Microsoft.Maui.Controls.Platform
 				return;
 			}
 
-			if (taps == 0)
-			{
-				tapTime = DateTime.Now;
-			}
-			taps++;
 			var children =
 				(view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y))?.
 				GetChildGesturesFor<TapGestureRecognizer>(ValidateGesture);
@@ -741,7 +736,14 @@ namespace Microsoft.Maui.Controls.Platform
 					}
 					else
 					{
-						if (taps > 0 && DateTime.Now < tapTime.AddMilliseconds(1000))
+						if (taps == 0)
+						{
+							tapTime = DateTime.Now;
+						}
+
+						taps++;
+
+						if (DateTime.Now < tapTime.AddMilliseconds(1000))
 						{
 							if (taps == recognizer.NumberOfTapsRequired)
 							{
