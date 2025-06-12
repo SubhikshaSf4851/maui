@@ -53,7 +53,7 @@ namespace Microsoft.Maui.Controls.Platform
 			var captured = false;
 
 			var children = view.GetChildElements(point);
-
+			Debug.WriteLine("children value: " + children);
 			if (children != null)
 			{
 				foreach (var recognizer in children.GetChildGesturesFor<TapGestureRecognizer>(recognizer => recognizer.NumberOfTapsRequired == count))
@@ -69,8 +69,7 @@ namespace Microsoft.Maui.Controls.Platform
 			if (captured)
 				return captured;
 
-			IEnumerable<TapGestureRecognizer> tapGestures = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>();
-			GetNumberOfTapsRequired(tapGestures.FirstOrDefault() ?? new TapGestureRecognizer());
+			GetNumberOfTapsRequired();
 			// Debug.WriteLine("_numberOfTapsRequired: " + _numberOfTapsRequired);
 			if (_numberOfTapsRequired < 2)
 			{
@@ -131,9 +130,13 @@ namespace Microsoft.Maui.Controls.Platform
 				return (tapGestureRecognizer.Buttons & ButtonsMask.Primary) == ButtonsMask.Primary;
 			}
 
-			void GetNumberOfTapsRequired(TapGestureRecognizer g)
+			void GetNumberOfTapsRequired() // Get number of taps required from the view 
 			{
-				_numberOfTapsRequired = g.NumberOfTapsRequired;
+				var Recognizer = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>(recognizer => recognizer.NumberOfTapsRequired > 0);
+				_numberOfTapsRequired = Recognizer
+					.Select(recognizer => recognizer.NumberOfTapsRequired)
+					.DefaultIfEmpty(1)
+					.First();
 			}
 		}
 
