@@ -89,6 +89,7 @@ namespace Microsoft.Maui.Graphics.Platform
 			_canvas.CanvasSize = new global::Windows.Foundation.Size(_dirty.Width, _dirty.Height);
 			_drawable.Draw(_canvas, _dirty);
 			PlatformGraphicsService.ThreadLocalCreator = null;
+			_canvas.Session = null;
 		}
 	}
 }

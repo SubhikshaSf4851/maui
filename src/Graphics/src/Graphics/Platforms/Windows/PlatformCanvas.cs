@@ -65,7 +65,12 @@ namespace Microsoft.Maui.Graphics.Platform
 		public CanvasDrawingSession Session
 		{
 			get => _session;
-			set => _session = value;
+			set
+			{
+				_session = null;
+				ResetState();
+				_session = value;
+			}
 		}
 
 		public global::Windows.Foundation.Size CanvasSize
