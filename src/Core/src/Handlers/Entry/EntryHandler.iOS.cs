@@ -181,7 +181,19 @@ namespace Microsoft.Maui.Handlers
 			{
 				if (sender is MauiTextField platformView)
 				{
-					VirtualView?.UpdateText(platformView.Text);
+					var platformText = platformView.Text ?? string.Empty;
+					var virtualText = VirtualView?.Text ?? string.Empty;
+
+					if (platformText == string.Empty)
+					{
+						platformView.Text = virtualText;
+						return;
+					}
+
+					if (virtualText != platformText)
+					{
+						VirtualView?.UpdateText(platformText);
+					}
 				}
 			}
 

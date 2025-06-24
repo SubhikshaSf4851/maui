@@ -32,6 +32,7 @@ namespace Microsoft.Maui.Platform
 			}
 			else
 				textField.SecureTextEntry = entry.IsPassword;
+			entry.CursorPosition = textField.Text?.Length ?? 0;
 #if MACCATALYST
 			textField.TextContentType = UITextContentType.OneTimeCode;
 #endif
