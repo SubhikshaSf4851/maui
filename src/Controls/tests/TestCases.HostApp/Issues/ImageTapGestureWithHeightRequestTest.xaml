@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui.Controls.Sample.Issues.ImageTapGestureWithHeightRequestTest"
+             Title="Image Tap Test">
+    <ScrollView>
+        <StackLayout Padding="20">
+            
+            <Label Text="Test Image Tap Gesture with HeightRequest" 
+                   FontSize="18" 
+                   FontAttributes="Bold" 
+                   Margin="0,0,0,20"/>
+            
+            <!-- Test case 1: Background + HeightRequest (problematic case) -->
+            <Grid RowDefinitions="Auto,60" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" 
+                       Text="Image WITH Background + HeightRequest (should fail tap)"
+                       FontAttributes="Bold"/>
+                
+                <Label Grid.Row="1" Grid.Column="0" 
+                       Text="Tap the image →" 
+                       VerticalOptions="Center"/>
+                
+                <Image Grid.Row="1" Grid.Column="1"
+                       Source="dotnet_bot.png"
+                       Aspect="AspectFit"
+                       Margin="2"
+                       BackgroundColor="LightBlue"
+                       HeightRequest="50"
+                       VerticalOptions="Center"
+                       HorizontalOptions="End"
+                       AutomationId="ImageWithBackgroundAndHeightRequest">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnImageTapped" NumberOfTapsRequired="1" />
+                    </Image.GestureRecognizers>
+                </Image>
+            </Grid>
+            
+            <!-- Test case 2: Background without HeightRequest (working case) -->
+            <Grid RowDefinitions="Auto,60" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" 
+                       Text="Image WITH Background but NO HeightRequest (should work)"
+                       FontAttributes="Bold"/>
+                
+                <Label Grid.Row="1" Grid.Column="0" 
+                       Text="Tap the image →" 
+                       VerticalOptions="Center"/>
+                
+                <Image Grid.Row="1" Grid.Column="1"
+                       Source="dotnet_bot.png"
+                       Aspect="AspectFit"
+                       Margin="2"
+                       BackgroundColor="LightGreen"
+                       VerticalOptions="Center"
+                       HorizontalOptions="End"
+                       AutomationId="ImageWithBackgroundNoHeightRequest">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnImageTapped" NumberOfTapsRequired="1" />
+                    </Image.GestureRecognizers>
+                </Image>
+            </Grid>
+            
+            <!-- Test case 3: HeightRequest without Background (working case) -->
+            <Grid RowDefinitions="Auto,60" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" 
+                       Text="Image WITH HeightRequest but NO Background (should work)"
+                       FontAttributes="Bold"/>
+                
+                <Label Grid.Row="1" Grid.Column="0" 
+                       Text="Tap the image →" 
+                       VerticalOptions="Center"/>
+                
+                <Image Grid.Row="1" Grid.Column="1"
+                       Source="dotnet_bot.png"
+                       Aspect="AspectFit"
+                       Margin="2"
+                       HeightRequest="50"
+                       VerticalOptions="Center"
+                       HorizontalOptions="End"
+                       AutomationId="ImageWithHeightRequestNoBackground">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnImageTapped" NumberOfTapsRequired="1" />
+                    </Image.GestureRecognizers>
+                </Image>
+            </Grid>
+            
+            <!-- Test case 4: Neither Background nor HeightRequest (control case) -->
+            <Grid RowDefinitions="Auto,60" ColumnDefinitions="*,Auto" Margin="0,0,0,20">
+                <Label Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" 
+                       Text="Image with NEITHER Background NOR HeightRequest (should work)"
+                       FontAttributes="Bold"/>
+                
+                <Label Grid.Row="1" Grid.Column="0" 
+                       Text="Tap the image →" 
+                       VerticalOptions="Center"/>
+                
+                <Image Grid.Row="1" Grid.Column="1"
+                       Source="dotnet_bot.png"
+                       Aspect="AspectFit"
+                       Margin="2"
+                       VerticalOptions="Center"
+                       HorizontalOptions="End"
+                       AutomationId="ImagePlain">
+                    <Image.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnImageTapped" NumberOfTapsRequired="1" />
+                    </Image.GestureRecognizers>
+                </Image>
+            </Grid>
+            
+            <!-- Result Label -->
+            <Label x:Name="ResultLabel" 
+                   Text="No taps yet" 
+                   FontSize="16" 
+                   HorizontalTextAlignment="Center"
+                   Padding="10"
+                   BackgroundColor="LightYellow"
+                   AutomationId="ResultLabel"/>
+                   
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

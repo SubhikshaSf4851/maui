@@ -703,6 +703,15 @@ namespace Microsoft.Maui.Controls.Platform
 				return;
 			}
 
+			// When tapping on a container, skip child element hit testing and directly process
+			// the view's gesture recognizers to avoid coordinate issues with auto-sized children
+			if (sender == Container && Container != Control)
+			{
+				IEnumerable<TapGestureRecognizer> tapGestures = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>(ValidateGesture);
+				ProcessGestureRecognizers(tapGestures);
+				return;
+			}
+
 			var children =
 				(view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y))?.
 				GetChildGesturesFor<TapGestureRecognizer>(ValidateGesture);
