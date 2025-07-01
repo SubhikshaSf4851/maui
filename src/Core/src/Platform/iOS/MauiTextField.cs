@@ -73,12 +73,9 @@ namespace Microsoft.Maui.Platform
 			{
 				base.SecureTextEntry = value;
 
-				// If we're the first responder when SecureTextEntry changes,
-				// we need to restore focus to properly apply the secure text mode
-
 				if (IsFirstResponder)
 				{
-					if (SecureTextEntry && !string.IsNullOrEmpty(Text)) //Move into SecureEntryText. 
+					if (SecureTextEntry && !string.IsNullOrEmpty(Text))
 					{
 						string currentText = Text;
 						Text = string.Empty;
@@ -91,10 +88,7 @@ namespace Microsoft.Maui.Platform
 		public override bool BecomeFirstResponder()
 		{
 			bool success = base.BecomeFirstResponder();
-
-			// If we're in secure text entry mode and have text,
-			// we need to reinsert the text to ensure it displays correctly
-			if (SecureTextEntry && success && !string.IsNullOrEmpty(Text)) //Move into SecureEntryText. 
+			if (SecureTextEntry && success && !string.IsNullOrEmpty(Text))
 			{
 				string currentText = Text;
 				Text = string.Empty;
