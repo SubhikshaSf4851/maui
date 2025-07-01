@@ -23,15 +23,7 @@ namespace Microsoft.Maui.Platform
 
 		public static void UpdateIsPassword(this UITextField textField, IEntry entry)
 		{
-			if (entry.IsPassword && textField.IsFirstResponder)
-			{
-				textField.Enabled = false;
-				textField.SecureTextEntry = true;
-				textField.Enabled = entry.IsEnabled;
-				textField.BecomeFirstResponder();
-			}
-			else
-				textField.SecureTextEntry = entry.IsPassword;
+			textField.SecureTextEntry = entry.IsPassword;
 #if MACCATALYST
 			textField.TextContentType = UITextContentType.OneTimeCode;
 #endif
