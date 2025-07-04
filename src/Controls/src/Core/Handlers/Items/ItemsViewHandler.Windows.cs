@@ -33,6 +33,27 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		double _previousHorizontalOffset;
 		double _previousVerticalOffset;
 		protected ListViewBase ListViewBase => PlatformView;
+
+
+		internal ListViewBase _listViewBase
+		{
+			get
+			{
+				try
+				{
+					return ListViewBase;
+				}
+				catch
+				{
+					return null;
+				}
+			}
+			set
+			{
+				PlatformView = value;
+			}
+		}
+
 		protected TItemsView ItemsView => VirtualView;
 		protected TItemsView Element => VirtualView;
 		protected WASDKDataTemplate ViewTemplate => (WASDKDataTemplate)WASDKApp.Current.Resources["View"];

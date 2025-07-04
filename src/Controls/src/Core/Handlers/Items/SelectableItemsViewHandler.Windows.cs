@@ -150,6 +150,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		void UpdateVirtualSelection()
 		{
+			if (_listViewBase is null)
+				return;
+
 			if (_ignorePlatformSelectionChange || ItemsView == null)
 			{
 				return;
@@ -205,6 +208,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		void UpdateItemContentControlSelection()
 		{
+			if (_listViewBase is null || ItemsView is null)
+				return;
 			var formsItemContentControls = ListViewBase.GetChildren<ItemContentControl>();
 
 			foreach (var formsItemContentControl in formsItemContentControls)
