@@ -15,6 +15,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 	{
 		bool _ignorePlatformSelectionChange;
 		bool _ignoreVirtualSelectionChange;
+        bool _isDisposed = false;
 
 		protected override void ConnectHandler(ListViewBase platformView)
 		{
@@ -46,6 +47,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		protected override void DisconnectHandler(ListViewBase platformView)
 		{
+            _isDisposed = true;
+
 			var oldListViewBase = platformView;
 
 			if (oldListViewBase != null)
@@ -150,8 +153,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		void UpdateVirtualSelection()
 		{
-			if (_listViewBase is null)
-				return;
 
 			if (_ignorePlatformSelectionChange || ItemsView == null)
 			{
@@ -208,8 +209,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 		void UpdateItemContentControlSelection()
 		{
-			if (_listViewBase is null || ItemsView is null)
-				return;
+            if(_isDisposed)
+            {
+                _isDisposed = false;
+                return;
+            }
+
 			var formsItemContentControls = ListViewBase.GetChildren<ItemContentControl>();
 
 			foreach (var formsItemContentControl in formsItemContentControls)
