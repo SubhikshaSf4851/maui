@@ -27,6 +27,11 @@ namespace Microsoft.Maui.Controls.Platform
 
 		SubscriptionFlags _subscriptionFlags = SubscriptionFlags.None;
 
+		// Multi-tap detection fields
+		int _tapCount = 0;
+		DateTime _lastTapTime = DateTime.MinValue;
+		const int MULTI_TAP_TIMEOUT_MS = 500;
+
 		bool _isDisposed;
 		bool _isPanning;
 		bool _isSwiping;
@@ -703,17 +708,61 @@ namespace Microsoft.Maui.Controls.Platform
 				return;
 			}
 
-			var children =
-				(view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y))?.
-				GetChildGesturesFor<TapGestureRecognizer>(ValidateGesture);
+			// Handle multi-tap detection
+			var currentTime = DateTime.Now;
+			var timeSinceLastTap = currentTime - _lastTapTime;
 
-			if (ProcessGestureRecognizers(children))
+			// Reset tap count if too much time has passed
+			if (timeSinceLastTap.TotalMilliseconds > MULTI_TAP_TIMEOUT_MS)
 			{
-				return;
+				_tapCount = 0;
 			}
 
-			IEnumerable<TapGestureRecognizer> tapGestures = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>(ValidateGesture);
-			ProcessGestureRecognizers(tapGestures);
+			_tapCount++;
+			_lastTapTime = currentTime;
+
+			// Get all tap gestures that might match
+			var children = (view as IGestureController)?.GetChildElements(new Point(tapPosition.Value.X, tapPosition.Value.Y));
+			var childGestures = children?.GetChildGesturesFor<TapGestureRecognizer>(g => ValidateGesture(g, _tapCount));
+			var viewGestures = view.GestureRecognizers.GetGesturesFor<TapGestureRecognizer>(g => ValidateGesture(g, _tapCount));
+
+			// Check if we have any gestures that match the current tap count
+			bool hasMatchingGestures = (childGestures?.Any() == true) || viewGestures.Any();
+
+			// Check if we should wait for more taps
+			bool shouldWaitForMoreTaps = false;
+			var allGestures = (childGestures ?? Enumerable.Empty<TapGestureRecognizer>()).Concat(viewGestures);
+			
+			// If we have gestures that require more taps than current count, wait
+			foreach (var gesture in view.GestureRecognizers.OfType<TapGestureRecognizer>())
+			{
+				if (gesture.NumberOfTapsRequired > _tapCount && ValidateGestureButtons(gesture, e))
+				{
+					shouldWaitForMoreTaps = true;
+					break;
+				}
+			}
+
+			// If no children, check parent too
+			if (!shouldWaitForMoreTaps && children != null)
+			{
+				foreach (var childGesture in children.GetChildGesturesFor<TapGestureRecognizer>())
+				{
+					if (childGesture.NumberOfTapsRequired > _tapCount && ValidateGestureButtons(childGesture, e))
+					{
+						shouldWaitForMoreTaps = true;
+						break;
+					}
+				}
+			}
+
+			// If we have matching gestures and shouldn't wait, fire them
+			if (hasMatchingGestures && !shouldWaitForMoreTaps)
+			{
+				ProcessGestureRecognizers(childGestures);
+				ProcessGestureRecognizers(viewGestures);
+				_tapCount = 0; // Reset after firing
+			}
 
 			bool ProcessGestureRecognizers(IEnumerable<TapGestureRecognizer>? tapGestures)
 			{
@@ -734,14 +783,24 @@ namespace Microsoft.Maui.Controls.Platform
 				return handled;
 			}
 
-			bool ValidateGesture(TapGestureRecognizer g)
+			bool ValidateGestureButtons(TapGestureRecognizer g, RoutedEventArgs e)
+			{
+				if (e is RightTappedRoutedEventArgs)
+				{
+					return (g.Buttons & ButtonsMask.Secondary) == ButtonsMask.Secondary;
+				}
+
+				return (g.Buttons & ButtonsMask.Primary) == ButtonsMask.Primary;
+			}
+
+			bool ValidateGesture(TapGestureRecognizer g, int currentTapCount)
 			{
 				if (e is RightTappedRoutedEventArgs)
 				{
 					// Currently we only support single right clicks
 					if ((g.Buttons & ButtonsMask.Secondary) == ButtonsMask.Secondary)
 					{
-						return g.NumberOfTapsRequired == 1;
+						return g.NumberOfTapsRequired == 1 && currentTapCount == 1;
 					}
 					else
 					{
@@ -752,10 +811,12 @@ namespace Microsoft.Maui.Controls.Platform
 				if ((g.Buttons & ButtonsMask.Primary) != ButtonsMask.Primary)
 					return false;
 
+				// For DoubleTapped events, only match gestures that require exactly 2 taps
 				if (e is DoubleTappedRoutedEventArgs)
-					return g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2;
+					return g.NumberOfTapsRequired == 2 && currentTapCount == 2;
 
-				return g.NumberOfTapsRequired == 1;
+				// For Tapped events, match gestures that require exactly the current tap count
+				return g.NumberOfTapsRequired == currentTapCount;
 			}
 		}
 
@@ -908,8 +969,8 @@ namespace Microsoft.Maui.Controls.Platform
 				}
 			}
 
-			if (gestures.HasAnyGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2)
-				|| children?.GetChildGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 1 || g.NumberOfTapsRequired == 2).Any() == true)
+			if (gestures.HasAnyGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 2)
+				|| children?.GetChildGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired == 2).Any() == true)
 			{
 				_subscriptionFlags |= SubscriptionFlags.ContainerDoubleTapEventSubscribed;
 
@@ -929,6 +990,29 @@ namespace Microsoft.Maui.Controls.Platform
 				{
 					_subscriptionFlags |= SubscriptionFlags.ControlDoubleTapEventSubscribed;
 					_control.DoubleTapped += HandleDoubleTapped;
+				}
+			}
+
+			// Handle gestures that require more than 2 taps - these use the single tap event with custom counting
+			if (gestures.HasAnyGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired > 2)
+				|| children?.GetChildGesturesFor<TapGestureRecognizer>(g => g.NumberOfTapsRequired > 2).Any() == true)
+			{
+				// Ensure we subscribe to the Tapped event if we haven't already
+				if ((_subscriptionFlags & SubscriptionFlags.ContainerTapAndRightTabEventSubscribed) == 0)
+				{
+					_subscriptionFlags |= SubscriptionFlags.ContainerTapAndRightTabEventSubscribed;
+
+					if (_control is TextBox)
+					{
+						_tappedEventHandler = new TappedEventHandler(OnTap);
+						_container.AddHandler(FrameworkElement.TappedEvent, _tappedEventHandler, true);
+					}
+					else
+					{
+						_container.Tapped += OnTap;
+					}
+
+					_container.RightTapped += OnTap;
 				}
 			}
 
