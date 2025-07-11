@@ -743,7 +743,7 @@ namespace Microsoft.Maui.Controls.Platform
 				}
 			}
 
-			// If no children, check parent too
+			// Also check child gestures for higher tap requirements
 			if (!shouldWaitForMoreTaps && children != null)
 			{
 				foreach (var childGesture in children.GetChildGesturesFor<TapGestureRecognizer>())

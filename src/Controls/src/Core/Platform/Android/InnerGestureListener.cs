@@ -338,15 +338,7 @@ namespace Microsoft.Maui.Controls.Platform
 			_tapCount++;
 			_lastTapTime = currentTime;
 
-			// Check if we have a gesture that matches this tap count
-			if (HasTapHandlerForCount(_tapCount))
-			{
-				_tapDelegate(_tapCount, e);
-				_tapCount = 0; // Reset after successful detection
-				return;
-			}
-
-			// Check if we should wait for more taps
+			// Check if we should wait for more taps by looking at all possible higher tap counts
 			bool shouldWaitForMoreTaps = false;
 			for (int i = _tapCount + 1; i <= 10; i++) // Check up to reasonable limit
 			{
@@ -357,7 +349,15 @@ namespace Microsoft.Maui.Controls.Platform
 				}
 			}
 
-			// If no higher tap counts are expected, reset
+			// Only fire if we have a gesture for this EXACT tap count AND no higher tap counts are expected
+			if (HasTapHandlerForCount(_tapCount) && !shouldWaitForMoreTaps)
+			{
+				_tapDelegate(_tapCount, e);
+				_tapCount = 0; // Reset after successful detection
+				return;
+			}
+
+			// If no higher tap counts are expected and we don't have a handler for current count, reset
 			if (!shouldWaitForMoreTaps)
 			{
 				_tapCount = 0;
