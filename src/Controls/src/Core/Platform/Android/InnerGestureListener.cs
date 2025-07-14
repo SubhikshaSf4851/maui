@@ -20,6 +20,7 @@ namespace Microsoft.Maui.Controls.Platform
 		// Multi-tap detection fields
 		int _tapCount = 0;
 		DateTime _lastTapTime = DateTime.MinValue;
+		DateTime _lastProcessedTapTime = DateTime.MinValue;
 		const int MULTI_TAP_TIMEOUT_MS = 500;
 
 		float _lastX;
@@ -328,6 +329,13 @@ namespace Microsoft.Maui.Controls.Platform
 		{
 			var currentTime = DateTime.Now;
 			var timeSinceLastTap = currentTime - _lastTapTime;
+			var timeSinceLastProcessed = currentTime - _lastProcessedTapTime;
+
+			// If we've already processed a tap very recently (within 50ms), skip to avoid double counting
+			if (timeSinceLastProcessed.TotalMilliseconds < 50)
+			{
+				return;
+			}
 
 			// Reset tap count if too much time has passed
 			if (timeSinceLastTap.TotalMilliseconds > MULTI_TAP_TIMEOUT_MS)
@@ -337,6 +345,7 @@ namespace Microsoft.Maui.Controls.Platform
 
 			_tapCount++;
 			_lastTapTime = currentTime;
+			_lastProcessedTapTime = currentTime;
 
 			// Check if we should wait for more taps by looking at all possible higher tap counts
 			bool shouldWaitForMoreTaps = false;
