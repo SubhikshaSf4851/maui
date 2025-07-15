@@ -20,7 +20,6 @@ namespace Microsoft.Maui.Controls.Platform
 		// Multi-tap detection fields
 		int _tapCount = 0;
 		DateTime _lastTapTime = DateTime.MinValue;
-		DateTime _lastProcessedTapTime = DateTime.MinValue;
 		const int MULTI_TAP_TIMEOUT_MS = 500;
 
 		float _lastX;
@@ -83,14 +82,9 @@ namespace Microsoft.Maui.Controls.Platform
 			if (_disposed)
 				return false;
 
-			// If we have multi-tap handlers, use the custom multi-tap detection for consistency
-			if (HasMultiTapHandler())
-			{
-				ProcessMultiTap(e);
-				return true;
-			}
-
-			if (HasDoubleTapHandler())
+			// For multi-tap handlers, we rely on OnSingleTapUp to handle all tap counting
+			// OnDoubleTap is just for Android's built-in double-tap detection when we don't have multi-tap handlers
+			if (!HasMultiTapHandler() && HasDoubleTapHandler())
 			{
 				return _tapDelegate(2, e);
 			}
@@ -162,7 +156,7 @@ namespace Microsoft.Maui.Controls.Platform
 			if (_disposed)
 				return false;
 
-			// If we have multi-tap handlers, use the custom multi-tap detection
+			// If we have multi-tap handlers, use the custom multi-tap detection for ALL tap counting
 			if (HasMultiTapHandler())
 			{
 				ProcessMultiTap(e);
@@ -186,11 +180,12 @@ namespace Microsoft.Maui.Controls.Platform
 			if (_disposed)
 				return false;
 
-			// If we have multi-tap handlers, use the custom multi-tap detection
+			// Multi-tap detection is handled entirely in OnSingleTapUp
+			// OnSingleTapConfirmed is only used for Android's built-in single/double tap conflict resolution
 			if (HasMultiTapHandler())
 			{
-				ProcessMultiTap(e);
-				return true;
+				// Don't process here - already handled in OnSingleTapUp
+				return false;
 			}
 
 			// The secondary button state only surfaces inside `OnSingleTapConfirmed`
@@ -329,13 +324,6 @@ namespace Microsoft.Maui.Controls.Platform
 		{
 			var currentTime = DateTime.Now;
 			var timeSinceLastTap = currentTime - _lastTapTime;
-			var timeSinceLastProcessed = currentTime - _lastProcessedTapTime;
-
-			// If we've already processed a tap very recently (within 50ms), skip to avoid double counting
-			if (timeSinceLastProcessed.TotalMilliseconds < 50)
-			{
-				return;
-			}
 
 			// Reset tap count if too much time has passed
 			if (timeSinceLastTap.TotalMilliseconds > MULTI_TAP_TIMEOUT_MS)
@@ -345,7 +333,6 @@ namespace Microsoft.Maui.Controls.Platform
 
 			_tapCount++;
 			_lastTapTime = currentTime;
-			_lastProcessedTapTime = currentTime;
 
 			// Check if we should wait for more taps by looking at all possible higher tap counts
 			bool shouldWaitForMoreTaps = false;
