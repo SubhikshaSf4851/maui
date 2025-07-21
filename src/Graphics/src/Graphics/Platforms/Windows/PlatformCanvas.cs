@@ -841,6 +841,7 @@ namespace Microsoft.Maui.Graphics.Platform
 				_blurEffect.Source = context;
 				_blurEffect.BorderMode = EffectBorderMode.Soft;
 				_blurEffect.Optimization = EffectOptimization.Speed;
+				_blurEffect.BlurAmount = (CurrentState.BlurRadius * 0.1f);
 
 				_session.Transform = Matrix3x2.Identity;
 				_session.DrawImage(_blurEffect, 0, 0);
