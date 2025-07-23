@@ -719,7 +719,7 @@ namespace Microsoft.Maui.Graphics.Platform
 		{
 			_context.SaveState();
 			var baseColorspace = _getColorspace?.Invoke();
-			var colorspace = CGColorSpace.CreatePattern(baseColorspace);
+			var colorspace = CGColorSpace.CreatePattern(null);
 			_context.SetFillColorSpace(colorspace);
 
 			_fillPatternRect.X = 0;
