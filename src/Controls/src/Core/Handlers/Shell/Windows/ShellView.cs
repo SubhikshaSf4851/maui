@@ -193,6 +193,9 @@ namespace Microsoft.Maui.Controls.Platform
 
 		internal void SwitchShellItem(ShellItem newItem, bool animate = true)
 		{
+			if (newItem?.CurrentItem?.CurrentItem is null)
+				return;
+
 			var navItems = FlyoutItems.OfType<NavigationViewItemViewModel>();
 
 			// Implicit items aren't items that are surfaced to the user 
