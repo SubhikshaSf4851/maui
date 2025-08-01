@@ -461,7 +461,11 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 				UIImage? icon = null;
 
-				if (image is not null)
+				if (image is FontImageSource fontImageSource)
+				{
+					icon = result?.Value;
+				}
+				else if (image is not null)
 				{
 					icon = result?.Value;
 					var originalImageSize = icon?.Size ?? CGSize.Empty;
