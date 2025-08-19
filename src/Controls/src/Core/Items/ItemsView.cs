@@ -113,7 +113,7 @@ namespace Microsoft.Maui.Controls
 
 		internal static readonly BindableProperty InternalItemsLayoutProperty =
 			BindableProperty.Create(nameof(ItemsLayout), typeof(IItemsLayout), typeof(ItemsView),
-				LinearItemsLayout.Vertical, propertyChanged: OnInternalItemsLayoutPropertyChanged);
+				defaultValueCreator: bindable => new LinearItemsLayout(ItemsLayoutOrientation.Vertical), propertyChanged: OnInternalItemsLayoutPropertyChanged);
 
 		static void OnInternalItemsLayoutPropertyChanged(BindableObject bindable, object oldValue, object newValue)
 		{
