@@ -10,12 +10,14 @@ using Microsoft.Maui.Controls.Internals;
 using Microsoft.Maui.Graphics;
 using PassKit;
 using UIKit;
+using Microsoft.Maui.Controls.Compatibility.Platform.iOS;
 
 namespace Microsoft.Maui.Controls.Handlers.Items2
 {
 	public abstract class ItemsViewController2<TItemsView> : UICollectionViewController, Items.MauiCollectionView.ICustomMauiCollectionViewDelegate
 	where TItemsView : ItemsView
 	{
+		private nfloat _keyboardHeight = 0;
 		public const int EmptyTag = 333;
 		readonly WeakReference<TItemsView> _itemsView;
 
@@ -176,12 +178,22 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 				// That said, at some point it's possible folks will want a PS for controlling this behavior
 				CollectionView.ContentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentBehavior.Never;
 			}
+			KeyboardObserver.KeyboardWillShow += OnKeyboardWillShow;
+			KeyboardObserver.KeyboardWillHide += OnKeyboardWillHide;
 
 			RegisterViewTypes();
 
 			EnsureLayoutInitialized();
 		}
+		void OnKeyboardWillShow(object sender, UIKeyboardEventArgs args)
+		{
+			_keyboardHeight = args.FrameEnd.Height;
+		}
 
+		void OnKeyboardWillHide(object sender, UIKeyboardEventArgs args)
+		{
+			_keyboardHeight = 0;
+		}
 		public override void LoadView()
 		{
 			base.LoadView();
@@ -572,6 +584,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 
 			var frame = DetermineEmptyViewFrame();
 
+			frame.Height -= _keyboardHeight;  // removing keyboard height
 			_emptyUIView.Frame = frame;
 
 			if (_emptyViewFormsElement != null && ((IElementController)ItemsView).LogicalChildren.IndexOf(_emptyViewFormsElement) != -1)
