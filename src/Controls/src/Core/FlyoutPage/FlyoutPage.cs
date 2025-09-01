@@ -20,7 +20,7 @@ namespace Microsoft.Maui.Controls
 		public static readonly BindableProperty IsGestureEnabledProperty = BindableProperty.Create(nameof(IsGestureEnabled), typeof(bool), typeof(FlyoutPage), true);
 
 		/// <summary>Bindable property for <see cref="IsPresented"/>.</summary>
-		public static readonly BindableProperty IsPresentedProperty = BindableProperty.Create(nameof(IsPresented), typeof(bool), typeof(FlyoutPage), default(bool),
+		public static readonly BindableProperty IsPresentedProperty = BindableProperty.Create(nameof(IsPresented), typeof(bool), typeof(FlyoutPage), default(bool), BindingMode.TwoWay,
 			propertyChanged: OnIsPresentedPropertyChanged, propertyChanging: OnIsPresentedPropertyChanging, defaultValueCreator: GetDefaultValue);
 
 		/// <summary>Bindable property for <see cref="FlyoutLayoutBehavior"/>.</summary>
