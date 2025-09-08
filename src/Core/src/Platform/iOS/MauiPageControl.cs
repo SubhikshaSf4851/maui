@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using CoreGraphics;
 using ObjCRuntime;
@@ -52,6 +53,12 @@ namespace Microsoft.Maui.Platform
 
 			if (Subviews.Length == 0)
 				return;
+
+			var subview = Subviews[0];
+			if (subview is LayoutView)
+			{
+				subview.Frame = Bounds;
+			}
 
 			UpdateIndicatorSize();
 
