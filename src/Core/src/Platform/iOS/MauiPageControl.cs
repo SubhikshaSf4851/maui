@@ -53,12 +53,6 @@ namespace Microsoft.Maui.Platform
 			if (Subviews.Length == 0)
 				return;
 
-			var subview = Subviews[0];
-			if (subview is LayoutView)
-			{
-				subview.Frame = Bounds;
-			}
-
 			UpdateIndicatorSize();
 
 			if (!IsSquare)
