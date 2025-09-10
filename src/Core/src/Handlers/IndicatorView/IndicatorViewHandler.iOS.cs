@@ -76,16 +76,7 @@ namespace Microsoft.Maui.Handlers
 					PlatformView.AddSubview(handler);
 
 					var size = (nfloat)VirtualView.IndicatorSize;
-					foreach (var child in handler.Subviews)
-					{
-						child.TranslatesAutoresizingMaskIntoConstraints = false;
-
-						NSLayoutConstraint.ActivateConstraints(new[]
-						{
-							child.WidthAnchor.ConstraintEqualTo(size),
-							child.HeightAnchor.ConstraintEqualTo(size)
-						});
-					}
+					handler.Frame = new CoreGraphics.CGRect(0, 0, size, size);
 				}
 			}
 
