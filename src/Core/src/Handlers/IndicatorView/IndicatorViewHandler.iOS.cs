@@ -76,7 +76,6 @@ namespace Microsoft.Maui.Handlers
 					var size = handler.SizeThatFits(new CoreGraphics.CGSize(double.PositiveInfinity, double.PositiveInfinity));
 					handler.Frame = new CoreGraphics.CGRect(0, 0, size.Width, size.Height);
 					PlatformView.AddSubview(handler);
-
 				}
 			}
 
