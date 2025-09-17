@@ -73,10 +73,10 @@ namespace Microsoft.Maui.Handlers
 				{
 					ClearIndicators();
 					handler = indicatorsLayoutOverride.ToPlatform(MauiContext);
+					var size = handler.SizeThatFits(new CoreGraphics.CGSize(double.PositiveInfinity, double.PositiveInfinity));
+					handler.Frame = new CoreGraphics.CGRect(0, 0, size.Width, size.Height);
 					PlatformView.AddSubview(handler);
 
-					var size = (nfloat)VirtualView.IndicatorSize;
-					handler.Frame = new CoreGraphics.CGRect(0, 0, size, size);
 				}
 			}
 
