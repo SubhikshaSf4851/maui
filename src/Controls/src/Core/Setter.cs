@@ -83,7 +83,7 @@ namespace Microsoft.Maui.Controls
 			else
 			{
 				var currentValue = targetObject.GetValue(Property);
-				if (!object.Equals(currentValue, Value))
+				if (!Equals(currentValue, Value))
 					targetObject.SetValue(Property, Value, specificity: specificity);
 			}
 		}
