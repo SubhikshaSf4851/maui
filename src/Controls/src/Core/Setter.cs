@@ -81,7 +81,11 @@ namespace Microsoft.Maui.Controls
 			else if (Value is IList<VisualStateGroup> visualStateGroupCollection)
 				targetObject.SetValue(Property, visualStateGroupCollection.Clone(), specificity);
 			else
-				targetObject.SetValue(Property, Value, specificity: specificity);
+			{
+				var currentValue = targetObject.GetValue(Property);
+				if (!object.Equals(currentValue, Value))
+					targetObject.SetValue(Property, Value, specificity: specificity);
+			}
 		}
 
 		internal void UnApply(BindableObject target, SetterSpecificity specificity)
