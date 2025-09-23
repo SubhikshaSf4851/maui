@@ -105,7 +105,11 @@ namespace Microsoft.Maui.Controls
 				targetObject.RemoveBinding(Property, specificity);
 			else if (Value is DynamicResource dynamicResource)
 				targetObject.RemoveDynamicResource(Property, specificity);
-			targetObject.ClearValue(Property, specificity);
+			var currentValue = targetObject.GetValue(Property);
+			if (!Equals(currentValue, Value))
+			{
+				targetObject.ClearValue(Property, specificity);
+			}
 		}
 	}
 }
