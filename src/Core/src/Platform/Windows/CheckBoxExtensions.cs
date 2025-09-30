@@ -29,6 +29,19 @@ namespace Microsoft.Maui.Platform
 			platformCheckBox.RefreshThemeResources();
 		}
 
+		internal static void UpdateMinimumWidth(this CheckBox platformCheckBox, IView view)
+		{
+			var width = view.MinimumWidth;
+			if (double.IsNaN(width))
+			{
+				platformCheckBox.MinWidth = 0;
+			}
+			else
+			{
+				platformCheckBox.MinWidth = width;
+			}
+		}
+
 		// ResourceKeys controlling the stroke and the checked fill color of the CheckBox.
 		// https://docs.microsoft.com/en-us/windows/winui/api/microsoft.ui.xaml.controls.checkbox?view=winui-3.0#control-style-and-template
 		static readonly string[] _tintColorResourceKeys =
