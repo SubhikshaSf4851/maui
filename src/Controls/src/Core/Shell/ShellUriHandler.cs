@@ -173,8 +173,35 @@ namespace Microsoft.Maui.Controls
 			return ShellNavigationRequest.WhatToDoWithTheStack.PushToIt;
 		}
 
+		internal static void ValidateRoutesInShell(Shell shell)
+		{
+			HashSet<string> routes = new HashSet<string>();
+
+			var items = shell.FlyoutItems;
+			foreach (var item in items)
+			{
+				if (item is IEnumerable enumerable)
+				{
+					foreach (var innerr in enumerable)
+					{
+						if (innerr is ShellItem shellItem && shellItem.CurrentItem != null)
+						{
+							var route = shellItem.CurrentItem.Route;
+							if (!routes.Add(route))
+							{
+								Debug.WriteLine($"Warning: Duplicate route detected: {route}");
+								throw new InvalidOperationException($"Duplicate route detected: {route}");
+							}
+						}
+					}
+				}
+			}
+		}
+
 		internal static ShellNavigationRequest GetNavigationRequest(Shell shell, Uri uri, bool enableRelativeShellRoutes = false, bool throwNavigationErrorAsException = true, ShellNavigationParameters shellNavigationParameters = null)
 		{
+			ValidateRoutesInShell(shell);
+			
 			uri = FormatUri(uri, shell);
 
 			// figure out the intent of the Uri
