@@ -182,14 +182,13 @@ namespace Microsoft.Maui.Controls
 			{
 				if (item is IEnumerable enumerable)
 				{
-					foreach (var innerr in enumerable)
+					foreach (var inner in enumerable)
 					{
-						if (innerr is ShellItem shellItem && shellItem.CurrentItem != null)
+						if (inner is ShellItem shellItem && shellItem.CurrentItem != null)
 						{
 							var route = shellItem.CurrentItem.Route;
 							if (!routes.Add(route))
 							{
-								Debug.WriteLine($"Warning: Duplicate route detected: {route}");
 								throw new InvalidOperationException($"Duplicate route detected: {route}");
 							}
 						}
