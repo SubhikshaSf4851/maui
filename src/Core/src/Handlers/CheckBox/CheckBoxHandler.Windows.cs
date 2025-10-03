@@ -71,7 +71,6 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateForeground(check);
 		}
 
-		// TODO: Make it public in .NET 10.0
 		internal static void MapCheckBoxMinimumWidth(IViewHandler handler, IView view)
 		{
 			if (view is ICheckBox checkbox && handler is CheckBoxHandler checkboxHandler)
@@ -79,6 +78,7 @@ namespace Microsoft.Maui.Handlers
 				checkboxHandler.PlatformView?.UpdateMinimumWidth(checkbox);
 			}
 		}
+
 		void OnChecked(object sender, RoutedEventArgs e)
 		{
 			if (sender is CheckBox platformView && VirtualView != null)
