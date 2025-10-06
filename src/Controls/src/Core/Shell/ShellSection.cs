@@ -26,6 +26,7 @@ namespace Microsoft.Maui.Controls
 	[DebuggerTypeProxy(typeof(ShellSectionDebugView))]
 	public partial class ShellSection : ShellGroupItem, IShellSectionController, IPropertyPropagationController, IVisualTreeElement, IStackNavigation
 	{
+		bool _isStillNavigating;
 		#region PropertyKeys
 
 		static readonly BindablePropertyKey ItemsPropertyKey =
@@ -1279,10 +1280,16 @@ namespace Microsoft.Maui.Controls
 
 		void IStackNavigation.RequestNavigation(NavigationRequest eventArgs)
 		{
+			if (_isStillNavigating)
+			{
+				return;
+			}
+
 			if (_handlerBasedNavigationCompletionSource != null)
 				throw new InvalidOperationException("Pending Navigations still processing");
 
 			_handlerBasedNavigationCompletionSource = new TaskCompletionSource<object>();
+			_isStillNavigating = true;
 			Handler.Invoke(nameof(IStackNavigation.RequestNavigation), eventArgs);
 		}
 
@@ -1292,6 +1299,7 @@ namespace Microsoft.Maui.Controls
 			var source = _handlerBasedNavigationCompletionSource;
 			_handlerBasedNavigationCompletionSource = null;
 			source?.SetResult(true);
+			_isStillNavigating = false;
 		}
 #nullable disable
 
