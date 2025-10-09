@@ -21,7 +21,7 @@
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
 
-      <Image x:Name="titleIcon" Visibility="Collapsed" Grid.Column="0" />
+      <Image x:Name="titleIcon" Visibility="Collapsed" Grid.Column="0" Height="32" Width="32"/>
 
       <ContentControl IsTabStop="False" x:Name="menuContent" Visibility="Collapsed" Grid.Column="1"></ContentControl>
 
