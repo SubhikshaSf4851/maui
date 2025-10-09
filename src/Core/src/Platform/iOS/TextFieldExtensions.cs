@@ -1,4 +1,5 @@
 ﻿using System;
+using CoreAnimation;
 using CoreGraphics;
 using Foundation;
 using Microsoft.Maui.Graphics;
@@ -255,6 +256,37 @@ namespace Microsoft.Maui.Platform
 			accessoryView.SetDoneClicked(OnDoneClicked);
 			textField.InputAccessoryView = accessoryView;
 #endif
+		}
+
+		public static void UpdateCornerRadius(this UITextField textField, IEntry entry)
+		{
+			var cornerRadius = entry.CornerRadius;
+
+			// Clear any existing mask
+			textField.Layer.Mask = null;
+
+			// If all corners are 0, reset to default
+			if (cornerRadius.TopLeft == 0 && cornerRadius.TopRight == 0 &&
+				cornerRadius.BottomLeft == 0 && cornerRadius.BottomRight == 0)
+			{
+				textField.Layer.CornerRadius = 0;
+				textField.Layer.MaskedCorners = (CACornerMask)0;
+				return;
+			}
+
+			// For uniform corner radius, use the simple approach
+			if (cornerRadius.TopLeft == cornerRadius.TopRight &&
+				cornerRadius.TopRight == cornerRadius.BottomLeft &&
+				cornerRadius.BottomLeft == cornerRadius.BottomRight)
+			{
+				textField.Layer.CornerRadius = (nfloat)cornerRadius.TopLeft;
+				textField.Layer.MaskedCorners = CACornerMask.MinXMinYCorner |
+											   CACornerMask.MaxXMinYCorner |
+											   CACornerMask.MinXMaxYCorner |
+											   CACornerMask.MaxXMaxYCorner;
+				textField.Layer.MasksToBounds = true;
+				return;
+			}
 		}
 
 		static void OnDoneClicked(object sender)

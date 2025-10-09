@@ -156,6 +156,9 @@ namespace Microsoft.Maui.Handlers
 				handler.PlatformView?.UpdateClearButtonVisibility(entry, platformHandler.GetClearButtonDrawable);
 		}
 
+		public static void MapCornerRadius(IEntryHandler handler, IEntry entry) =>
+			handler.PlatformView?.UpdateCornerRadius(entry);
+
 		static void MapFocus(IEntryHandler handler, IEntry entry, object? args)
 		{
 			if (args is FocusRequest request)

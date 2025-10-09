@@ -1,4 +1,7 @@
 #nullable enable
+Microsoft.Maui.IEntry.CornerRadius.get -> Microsoft.Maui.CornerRadius
+static Microsoft.Maui.Handlers.EntryHandler.MapCornerRadius(Microsoft.Maui.Handlers.IEntryHandler! handler, Microsoft.Maui.IEntry! entry) -> void
+static Microsoft.Maui.Platform.TextFieldExtensions.UpdateCornerRadius(this UIKit.UITextField! textField, Microsoft.Maui.IEntry! entry) -> void
 virtual Microsoft.Maui.Animations.Lerp.LerpDelegate.Invoke(object! start, object! end, double progress) -> object!
 Microsoft.Maui.Handlers.ContextFlyoutItemHandlerUpdate.ContextFlyoutItemHandlerUpdate(Microsoft.Maui.Handlers.ContextFlyoutItemHandlerUpdate! original) -> void
 Microsoft.Maui.Handlers.ContextFlyoutItemHandlerUpdate.Deconstruct(out int Index, out Microsoft.Maui.IMenuElement! MenuElement) -> void

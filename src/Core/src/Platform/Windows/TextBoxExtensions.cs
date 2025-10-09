@@ -219,6 +219,23 @@ namespace Microsoft.Maui.Platform
 				textBox.SelectionLength = entry.SelectionLength;
 		}
 
+		public static void UpdateCornerRadius(this TextBox platformEntry, IEntry entry)
+		{
+			var cornerRadius = entry.CornerRadius;
+
+			if (cornerRadius.TopLeft == 0 && cornerRadius.TopRight == 0 && cornerRadius.BottomLeft == 0 && cornerRadius.BottomRight == 0)
+			{
+				platformEntry.CornerRadius = new Microsoft.UI.Xaml.CornerRadius(0);
+				return;
+			}
+
+			platformEntry.CornerRadius = new Microsoft.UI.Xaml.CornerRadius(
+				cornerRadius.TopLeft,
+				cornerRadius.TopRight,
+				cornerRadius.BottomRight,
+				cornerRadius.BottomLeft);
+		}
+
 		// TODO: NET8 issoto - Revisit this, marking this method as `internal` to avoid breaking public API changes
 		internal static int GetCursorPosition(this TextBox textBox, int cursorOffset = 0)
 		{

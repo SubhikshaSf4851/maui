@@ -1,4 +1,7 @@
 #nullable enable
+Microsoft.Maui.Controls.Entry.CornerRadius.get -> Microsoft.Maui.CornerRadius
+Microsoft.Maui.Controls.Entry.CornerRadius.set -> void
+~static readonly Microsoft.Maui.Controls.Entry.CornerRadiusProperty -> Microsoft.Maui.Controls.BindableProperty
 ~Microsoft.Maui.Controls.Element.transientNamescope -> Microsoft.Maui.Controls.Internals.INameScope
 Microsoft.Maui.Controls.FlexLayout.CrossPlatformMeasure(double widthConstraint, double heightConstraint) -> Microsoft.Maui.Graphics.Size
 override Microsoft.Maui.Controls.ScrollView.OnSizeAllocated(double width, double height) -> void

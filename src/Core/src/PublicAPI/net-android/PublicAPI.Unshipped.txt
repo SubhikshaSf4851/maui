@@ -1,4 +1,7 @@
 #nullable enable
+Microsoft.Maui.IEntry.CornerRadius.get -> Microsoft.Maui.CornerRadius
+static Microsoft.Maui.Handlers.EntryHandler.MapCornerRadius(Microsoft.Maui.Handlers.IEntryHandler! handler, Microsoft.Maui.IEntry! entry) -> void
+static Microsoft.Maui.Platform.EditTextExtensions.UpdateCornerRadius(this Android.Widget.EditText! platformEntry, Microsoft.Maui.IEntry! entry) -> void
 *REMOVED*Microsoft.Maui.Platform.MauiPicker.ShowPopupOnFocus.get -> bool
 *REMOVED*Microsoft.Maui.Platform.MauiPicker.ShowPopupOnFocus.set -> void
 *REMOVED*override Microsoft.Maui.Platform.MauiPicker.OnFocusChanged(bool gainFocus, Android.Views.FocusSearchDirection direction, Android.Graphics.Rect? previouslyFocusedRect) -> void

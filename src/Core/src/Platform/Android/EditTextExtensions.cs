@@ -196,7 +196,48 @@ namespace Microsoft.Maui.Platform
 			editText.SetCursorVisible(isReadOnly);
 		}
 
-		// TODO: NET8 hartez - Remove this, nothing uses it
+		public static void UpdateCornerRadius(this EditText platformEntry, IEntry entry)
+		{
+			var cornerRadius = entry.CornerRadius;
+			var context = platformEntry.Context;
+			if (context == null)
+				return;
+
+			// If all corner radii are 0, don't apply any custom background - let the normal background handling work
+			if (cornerRadius.TopLeft == 0 && cornerRadius.TopRight == 0 &&
+				cornerRadius.BottomLeft == 0 && cornerRadius.BottomRight == 0)
+			{
+				return;
+			}
+
+			// Create a new drawable with corner radius
+			var drawable = new GradientDrawable();
+			drawable.SetShape(ShapeType.Rectangle);
+
+			// Convert to pixels
+			var density = context.Resources?.DisplayMetrics?.Density ?? 1;
+			var topLeft = (float)(cornerRadius.TopLeft * density);
+			var topRight = (float)(cornerRadius.TopRight * density);
+			var bottomLeft = (float)(cornerRadius.BottomLeft * density);
+			var bottomRight = (float)(cornerRadius.BottomRight * density);
+
+			// SetCornerRadii expects: top-left, top-right, bottom-right, bottom-left
+			drawable.SetCornerRadii(new float[] { topLeft, topRight, bottomRight, bottomLeft });
+
+			// Determine what color to use for the background
+			var backgroundPaint = entry.Background;
+			if (backgroundPaint != null)
+			{
+				// Try to extract color from the background paint
+				if (backgroundPaint is SolidPaint solidPaint && solidPaint.Color != null)
+				{
+					drawable.SetColor(solidPaint.Color.ToPlatform());
+				}
+				drawable.SetStroke(2, Android.Graphics.Color.ParseColor("#E0E0E0"));
+			}
+
+			platformEntry.Background = drawable;
+		}       // TODO: NET8 hartez - Remove this, nothing uses it
 		public static void UpdateClearButtonVisibility(this EditText editText, IEntry entry, Drawable? clearButtonDrawable) =>
 			UpdateClearButtonVisibility(editText, entry, () => clearButtonDrawable);
 

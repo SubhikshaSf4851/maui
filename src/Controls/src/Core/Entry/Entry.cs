@@ -85,11 +85,15 @@ namespace Microsoft.Maui.Controls
 		/// </summary>
 		public static readonly BindableProperty ClearButtonVisibilityProperty = BindableProperty.Create(nameof(ClearButtonVisibility), typeof(ClearButtonVisibility), typeof(Entry), ClearButtonVisibility.Never);
 
-		readonly Lazy<PlatformConfigurationRegistry<Entry>> _platformConfigurationRegistry;
-
 		/// <summary>
-		/// Creates a new <see cref="Entry"/> object with default values.
+		/// Backing store for the <see cref="CornerRadius"/> property.
 		/// </summary>
+		public static readonly BindableProperty CornerRadiusProperty = BindableProperty.Create(nameof(CornerRadius), typeof(CornerRadius), typeof(Entry), new CornerRadius(),
+			propertyChanged: (bindable, oldValue, newValue) => ((Entry)bindable).UpdateCornerRadius());
+
+		readonly Lazy<PlatformConfigurationRegistry<Entry>> _platformConfigurationRegistry;     /// <summary>
+																								/// Creates a new <see cref="Entry"/> object with default values.
+																								/// </summary>
 		public Entry()
 		{
 			_platformConfigurationRegistry = new Lazy<PlatformConfigurationRegistry<Entry>>(() => new PlatformConfigurationRegistry<Entry>(this));
@@ -164,14 +168,21 @@ namespace Microsoft.Maui.Controls
 		}
 
 		/// <summary>
-		/// Occurs when the user finalizes the text in an entry with the return key.
+		/// Gets or sets the corner radius of the Entry.
 		/// </summary>
-		public event EventHandler Completed;
+		public CornerRadius CornerRadius
+		{
+			get => (CornerRadius)GetValue(CornerRadiusProperty);
+			set => SetValue(CornerRadiusProperty, value);
+		}
 
 		/// <summary>
-		/// Internal method to trigger <see cref="Completed"/> and <see cref="ReturnCommand"/>.
-		/// Should not be called manually outside of .NET MAUI.
+		/// Occurs when the user finalizes the text in an entry with the return key.
 		/// </summary>
+		public event EventHandler Completed;        /// <summary>
+													/// Internal method to trigger <see cref="Completed"/> and <see cref="ReturnCommand"/>.
+													/// Should not be called manually outside of .NET MAUI.
+													/// </summary>
 		[EditorBrowsable(EditorBrowsableState.Never)]
 		public void SendCompleted()
 		{
@@ -200,5 +211,7 @@ namespace Microsoft.Maui.Controls
 		{
 			(this as IEntryController).SendCompleted();
 		}
+
+		void UpdateCornerRadius() => Handler?.UpdateValue(nameof(IEntry.CornerRadius));
 	}
 }

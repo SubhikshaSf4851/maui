@@ -106,6 +106,9 @@ namespace Microsoft.Maui.Handlers
 		public static void MapSelectionLength(IEntryHandler handler, IEntry entry) =>
 			handler.PlatformView?.UpdateSelectionLength(entry);
 
+		public static void MapCornerRadius(IEntryHandler handler, IEntry entry) =>
+			handler.PlatformView?.UpdateCornerRadius(entry);
+
 		void OnPlatformTextChanged(object sender, TextChangedEventArgs args)
 		{
 			if (PlatformView is MauiPasswordTextBox passwordBox)

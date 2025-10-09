@@ -105,6 +105,9 @@ namespace Microsoft.Maui.Handlers
 		public static void MapClearButtonVisibility(IEntryHandler handler, IEntry entry) =>
 			handler.PlatformView?.UpdateClearButtonVisibility(entry);
 
+		public static void MapCornerRadius(IEntryHandler handler, IEntry entry) =>
+			handler.PlatformView?.UpdateCornerRadius(entry);
+
 		public static void MapFormatting(IEntryHandler handler, IEntry entry)
 		{
 			handler.PlatformView?.UpdateMaxLength(entry);

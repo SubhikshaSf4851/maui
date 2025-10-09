@@ -21,6 +21,11 @@
 		ClearButtonVisibility ClearButtonVisibility { get; }
 
 		/// <summary>
+		/// Gets the corner radius of the Entry.
+		/// </summary>
+		CornerRadius CornerRadius { get; }
+
+		/// <summary>
 		/// Occurs when the user finalizes the text in an entry with the return key.
 		/// </summary>
 		void Completed();
