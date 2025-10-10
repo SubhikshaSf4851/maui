@@ -22,7 +22,7 @@ namespace Microsoft.Maui.Handlers
 
 		protected override UIButton CreatePlatformView()
 		{
-			var platformView = new UIButton(UIButtonType.System)
+			var platformView = new UIButton(UIButtonType.Custom)
 			{
 				ClipsToBounds = true
 			};
@@ -80,6 +80,7 @@ namespace Microsoft.Maui.Handlers
 
 				platformImage = platformImage?.ImageWithRenderingMode(UIImageRenderingMode.AlwaysOriginal);
 
+				UIView.AnimationsEnabled = false;
 				button.SetImage(platformImage, UIControlState.Normal);
 				button.HorizontalAlignment = UIControlContentHorizontalAlignment.Fill;
 				button.VerticalAlignment = UIControlContentVerticalAlignment.Fill;
