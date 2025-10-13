@@ -226,6 +226,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			base.ViewWillLayoutSubviews();
 			UpdateFooterPosition();
 			UpdateFlyoutContent();
+			UpdateBackground();
 		}
 
 		protected virtual void UpdateBackground()
