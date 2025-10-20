@@ -190,9 +190,23 @@ namespace Microsoft.Maui.Handlers
 
 			void OnEditingChanged(object? sender, EventArgs e)
 			{
-				if (sender is MauiTextField platformView)
+				if (sender is MauiTextField platformView && VirtualView is IEntry virtualView)
 				{
-					VirtualView?.UpdateText(platformView.Text);
+					var currentText = platformView.Text;
+
+					// For iOS 26+, handle MaxLength validation here since OnShouldChangeCharacters is deprecated
+					if (UIDevice.CurrentDevice.CheckSystemVersion(26, 0) && virtualView.MaxLength >= 0)
+					{
+						if (currentText?.Length > virtualView.MaxLength)
+						{
+							// Trim the text to MaxLength and update the platform view
+							var trimmedText = currentText.Substring(0, virtualView.MaxLength);
+							platformView.Text = trimmedText;
+							currentText = trimmedText;
+						}
+					}
+
+					virtualView.UpdateText(currentText);
 				}
 			}
 
