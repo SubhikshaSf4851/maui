@@ -195,7 +195,7 @@ namespace Microsoft.Maui.Handlers
 					var currentText = platformView.Text;
 
 					// For iOS 26+, handle MaxLength validation here since OnShouldChangeCharacters is deprecated
-					if (UIDevice.CurrentDevice.CheckSystemVersion(26, 0) && virtualView.MaxLength >= 0)
+					if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26) && virtualView.MaxLength >= 0)
 					{
 						if (currentText?.Length > virtualView.MaxLength)
 						{
