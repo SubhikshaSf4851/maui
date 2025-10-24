@@ -116,6 +116,27 @@ namespace Microsoft.Maui.Controls.Platform
 				}
 				base.MeasureOverride(availableSize);
 				var request = view.Measure(availableSize.Width, availableSize.Height);
+				if (view is Grid grid)
+				{
+					//Need to check whether grid have star rows/columns
+					//if star present set clip to null
+					for (int i = 0; i < grid.RowDefinitions.Count; i++)
+					{
+						if (grid.RowDefinitions[i].Height.IsStar)
+						{
+							Clip = null;
+							return request.ToPlatform();
+						}
+					}
+					for (int i = 0; i < grid.ColumnDefinitions.Count; i++)
+					{
+						if (grid.ColumnDefinitions[i].Width.IsStar)
+						{
+							Clip = null;
+							return request.ToPlatform();
+						}
+					}
+				}
 				Clip = new RectangleGeometry { Rect = new WRect(0, 0, request.Width, request.Height) };
 				return request.ToPlatform();
 			}
