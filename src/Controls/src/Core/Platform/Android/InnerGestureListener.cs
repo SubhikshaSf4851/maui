@@ -17,6 +17,11 @@ namespace Microsoft.Maui.Controls.Platform
 		DragAndDropGestureHandler _dragAndDropGestureHandler;
 		PointerGestureHandler _pointerGestureHandler;
 		bool _isScrolling;
+		// Multi-tap detection fields
+		int _tapCount = 0;
+		DateTime _lastTapTime = DateTime.MinValue;
+		const int MULTI_TAP_TIMEOUT_MS = 500;
+
 		float _lastX;
 		float _lastY;
 		bool _disposed;
@@ -77,7 +82,9 @@ namespace Microsoft.Maui.Controls.Platform
 			if (_disposed)
 				return false;
 
-			if (HasDoubleTapHandler())
+			// For multi-tap handlers, we rely on OnSingleTapUp to handle all tap counting
+			// OnDoubleTap is just for Android's built-in double-tap detection when we don't have multi-tap handlers
+			if (!HasMultiTapHandler() && HasDoubleTapHandler())
 			{
 				return _tapDelegate(2, e);
 			}
@@ -149,6 +156,13 @@ namespace Microsoft.Maui.Controls.Platform
 			if (_disposed)
 				return false;
 
+			// If we have multi-tap handlers, use the custom multi-tap detection for ALL tap counting
+			if (HasMultiTapHandler())
+			{
+				ProcessMultiTap(e);
+				return true;
+			}
+
 			if (HasDoubleTapHandler())
 			{
 				// Because we have a handler for double-tap, we need to wait for
@@ -165,6 +179,14 @@ namespace Microsoft.Maui.Controls.Platform
 		{
 			if (_disposed)
 				return false;
+
+			// Multi-tap detection is handled entirely in OnSingleTapUp
+			// OnSingleTapConfirmed is only used for Android's built-in single/double tap conflict resolution
+			if (HasMultiTapHandler())
+			{
+				// Don't process here - already handled in OnSingleTapUp
+				return false;
+			}
 
 			// The secondary button state only surfaces inside `OnSingleTapConfirmed`
 			// Inside 'OnSingleTap' the e.ButtonState doesn't indicate a secondary click
@@ -274,6 +296,68 @@ namespace Microsoft.Maui.Controls.Platform
 				return false;
 
 			return _tapGestureRecognizers(1).Any();
+		}
+
+		bool HasMultiTapHandler()
+		{
+			if (_tapGestureRecognizers == null)
+				return false;
+
+			// Check if we have any gestures that require more than 2 taps
+			for (int i = 3; i <= 10; i++) // Reasonable upper limit
+			{
+				if (_tapGestureRecognizers(i).Any())
+					return true;
+			}
+			return false;
+		}
+
+		bool HasTapHandlerForCount(int count)
+		{
+			if (_tapGestureRecognizers == null)
+				return false;
+
+			return _tapGestureRecognizers(count).Any();
+		}
+
+		void ProcessMultiTap(MotionEvent e)
+		{
+			var currentTime = DateTime.Now;
+			var timeSinceLastTap = currentTime - _lastTapTime;
+
+			// Reset tap count if too much time has passed
+			if (timeSinceLastTap.TotalMilliseconds > MULTI_TAP_TIMEOUT_MS)
+			{
+				_tapCount = 0;
+			}
+
+			_tapCount++;
+			_lastTapTime = currentTime;
+
+			// Check if we should wait for more taps by looking at all possible higher tap counts
+			bool shouldWaitForMoreTaps = false;
+			for (int i = _tapCount + 1; i <= 10; i++) // Check up to reasonable limit
+			{
+				if (HasTapHandlerForCount(i))
+				{
+					shouldWaitForMoreTaps = true;
+					break;
+				}
+			}
+
+			// Only fire if we have a gesture for this EXACT tap count AND no higher tap counts are expected
+			if (HasTapHandlerForCount(_tapCount) && !shouldWaitForMoreTaps)
+			{
+				_tapDelegate(_tapCount, e);
+				_tapCount = 0; // Reset after successful detection
+				return;
+			}
+
+			// If no higher tap counts are expected and we don't have a handler for current count, reset
+			if (!shouldWaitForMoreTaps)
+			{
+				_tapCount = 0;
+			}
 		}
 	}
 }
