@@ -120,17 +120,17 @@ namespace Microsoft.Maui.Controls.Platform
 				{
 					//Need to check whether grid have star rows/columns
 					//if star present set clip to null
-					for (int i = 0; i < grid.RowDefinitions.Count; i++)
+					for (int rowIndex = 0; rowIndex < grid.RowDefinitions.Count; rowIndex++)
 					{
-						if (grid.RowDefinitions[i].Height.IsStar)
+						if (grid.RowDefinitions[rowIndex].Height.IsStar)
 						{
 							Clip = null;
 							return request.ToPlatform();
 						}
 					}
-					for (int i = 0; i < grid.ColumnDefinitions.Count; i++)
+					for (int colIndex = 0; colIndex < grid.ColumnDefinitions.Count; colIndex++)
 					{
-						if (grid.ColumnDefinitions[i].Width.IsStar)
+						if (grid.ColumnDefinitions[colIndex].Width.IsStar)
 						{
 							Clip = null;
 							return request.ToPlatform();
