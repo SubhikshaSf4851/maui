@@ -119,12 +119,12 @@ namespace Microsoft.Maui.Controls.Platform
 				if (view is Grid grid)
 				{
 					//Need to check whether grid have star rows/columns
-					//if star present set clip to null
+					//if star present set clip to available size
 					for (int rowIndex = 0; rowIndex < grid.RowDefinitions.Count; rowIndex++)
 					{
 						if (grid.RowDefinitions[rowIndex].Height.IsStar)
 						{
-							Clip = null;
+							Clip = new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
 							return request.ToPlatform();
 						}
 					}
@@ -132,7 +132,7 @@ namespace Microsoft.Maui.Controls.Platform
 					{
 						if (grid.ColumnDefinitions[colIndex].Width.IsStar)
 						{
-							Clip = null;
+							Clip = new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
 							return request.ToPlatform();
 						}
 					}
