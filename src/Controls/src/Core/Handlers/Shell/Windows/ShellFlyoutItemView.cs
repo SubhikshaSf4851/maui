@@ -116,28 +116,34 @@ namespace Microsoft.Maui.Controls.Platform
 				}
 				base.MeasureOverride(availableSize);
 				var request = view.Measure(availableSize.Width, availableSize.Height);
+				var clip = new RectangleGeometry { Rect = new WRect(0, 0, request.Width, request.Height) };
 				if (view is Grid grid)
-				{
-					//Need to check whether grid have star rows/columns
+				{          
+					//Need to check whether grid have star rows/columns          
 					//if star present set clip to available size
+					bool isClipApplied = false;
 					for (int rowIndex = 0; rowIndex < grid.RowDefinitions.Count; rowIndex++)
 					{
 						if (grid.RowDefinitions[rowIndex].Height.IsStar)
 						{
-							Clip = new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
-							return request.ToPlatform();
+							clip = new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
+							isClipApplied = true;
+							break;
 						}
 					}
-					for (int colIndex = 0; colIndex < grid.ColumnDefinitions.Count; colIndex++)
+					if (!isClipApplied)
 					{
-						if (grid.ColumnDefinitions[colIndex].Width.IsStar)
+						for (int colIndex = 0; colIndex < grid.ColumnDefinitions.Count; colIndex++)
 						{
-							Clip = new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
-							return request.ToPlatform();
+							if (grid.ColumnDefinitions[colIndex].Width.IsStar)
+							{
+								clip = new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
+								break;
+							}
 						}
 					}
 				}
-				Clip = new RectangleGeometry { Rect = new WRect(0, 0, request.Width, request.Height) };
+				Clip = clip;
 				return request.ToPlatform();
 			}
 
