@@ -13,6 +13,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 {
 	public class CarouselViewController2 : ItemsViewController2<CarouselView>
 	{
+		CGRect _previousBounds = CGRect.Empty; // Declare at class level
 		bool _isUpdating = false;
 		int _section = 0;
 		CarouselViewLoopManager _carouselViewLoopManager;
@@ -408,6 +409,17 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 
 		internal void SetPosition(int position)
 		{
+			// Skip processing during rotation/layout change
+
+			var currentBounds = CollectionView.ContentSize;
+			if (_previousBounds != CGRect.Empty &&
+	(_previousBounds.Width != currentBounds.Width ||
+	 _previousBounds.Height != currentBounds.Height))
+			{
+				_previousBounds = new CGRect(CGPoint.Empty, currentBounds);
+				return;
+			}
+
 			if (ItemsView is not CarouselView carousel)
 			{
 				return;
@@ -426,6 +438,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			ItemsView.SetValueFromRenderer(CarouselView.PositionProperty, position);
 			SetCurrentItem(position);
 			UpdateVisualStates();
+			_previousBounds = new CGRect(CGPoint.Empty, currentBounds);
 		}
 
 		void SetCurrentItem(int carouselPosition)
