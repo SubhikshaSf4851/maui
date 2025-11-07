@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using CoreGraphics;
@@ -15,7 +16,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 	{
 		CGRect _previousBounds = CGRect.Empty; // Declare at class level
 		bool _isUpdating = false;
+		int _orientationChange = 0;
 		int _section = 0;
+		int _currentItemIndex = -1;
 		CarouselViewLoopManager _carouselViewLoopManager;
 
 		// We need to keep track of the old views to update the visual states
@@ -50,6 +53,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			return cell;
 		}
 
+		bool _blockCurrentItemUpdate = false;
+
 		public override nint GetItemsCount(UICollectionView collectionView, nint section) => LoopItemsSource.LoopCount;
 
 		void InitializeCarouselViewLoopManager()
@@ -65,8 +70,17 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			InitializeCarouselViewLoopManager();
 			base.ViewDidLoad();
+
+			// Subscribe to orientation change notifications
+			NSNotificationCenter.DefaultCenter.AddObserver(UIDevice.OrientationDidChangeNotification, DeviceOrientationChanged);
 		}
 
+		void DeviceOrientationChanged(NSNotification notification)
+		{
+			_blockCurrentItemUpdate = true;
+			_currentItemIndex = ItemsView.Position;
+			_orientationChange++;
+		}
 		public override void ViewWillLayoutSubviews()
 		{
 			base.ViewWillLayoutSubviews();
@@ -78,6 +92,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			base.ViewDidLayoutSubviews();
 			await UpdateInitialPosition();
+			_blockCurrentItemUpdate = false;
+			if (_orientationChange > 0)
+			{
+				_orientationChange = 0;
+				ScrollToPosition(_currentItemIndex, _currentItemIndex, false, true);
+			}
 		}
 
 		public override void DraggingStarted(UIScrollView scrollView)
@@ -151,6 +171,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			InitialPositionSet = false;
 
 			UnsubscribeCollectionItemsSourceChanged(ItemsSource);
+
+			// Clean up orientation notification observer
+			NSNotificationCenter.DefaultCenter.RemoveObserver(this, UIDevice.OrientationDidChangeNotification, null);
 
 			_carouselViewLoopManager?.Dispose();
 			_carouselViewLoopManager = null;
@@ -367,6 +390,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			return _isUpdating;
 		}
+
+		internal bool _blockCurrentItemUpdating()
+		{
+			return _blockCurrentItemUpdate;
+		}
+
 		internal void UpdateLoop()
 		{
 			if (ItemsView is not CarouselView carousel)
@@ -409,17 +438,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 
 		internal void SetPosition(int position)
 		{
-			// Skip processing during rotation/layout change
-
-			var currentBounds = CollectionView.ContentSize;
-			if (_previousBounds != CGRect.Empty &&
-	(_previousBounds.Width != currentBounds.Width ||
-	 _previousBounds.Height != currentBounds.Height))
-			{
-				_previousBounds = new CGRect(CGPoint.Empty, currentBounds);
-				return;
-			}
-
 			if (ItemsView is not CarouselView carousel)
 			{
 				return;
@@ -438,7 +456,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			ItemsView.SetValueFromRenderer(CarouselView.PositionProperty, position);
 			SetCurrentItem(position);
 			UpdateVisualStates();
-			_previousBounds = new CGRect(CGPoint.Empty, currentBounds);
 		}
 
 		void SetCurrentItem(int carouselPosition)

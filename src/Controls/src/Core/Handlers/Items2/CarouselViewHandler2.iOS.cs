@@ -147,6 +147,10 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 					}
 
 					//Update the CarouselView position
+					if (cv2Controller?._blockCurrentItemUpdating() == true)
+					{
+						return;
+					}
 					cv2Controller?.SetPosition(carouselPosition);
 
 				};
