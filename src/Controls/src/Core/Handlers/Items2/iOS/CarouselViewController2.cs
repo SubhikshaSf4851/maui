@@ -14,9 +14,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 {
 	public class CarouselViewController2 : ItemsViewController2<CarouselView>
 	{
-		CGRect _previousBounds = CGRect.Empty; // Declare at class level
+		bool _blockCurrentItemUpdate = false;
 		bool _isUpdating = false;
-		int _orientationChange = 0;
 		int _section = 0;
 		int _currentItemIndex = -1;
 		CarouselViewLoopManager _carouselViewLoopManager;
@@ -53,8 +52,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			return cell;
 		}
 
-		bool _blockCurrentItemUpdate = false;
-
 		public override nint GetItemsCount(UICollectionView collectionView, nint section) => LoopItemsSource.LoopCount;
 
 		void InitializeCarouselViewLoopManager()
@@ -79,7 +76,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			_blockCurrentItemUpdate = true;
 			_currentItemIndex = ItemsView.Position;
-			_orientationChange++;
 		}
 		public override void ViewWillLayoutSubviews()
 		{
@@ -92,12 +88,11 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			base.ViewDidLayoutSubviews();
 			await UpdateInitialPosition();
-			if (_orientationChange > 0)
+			if (_blockCurrentItemUpdate)
 			{
-				_orientationChange = 0;
 				ScrollToPosition(_currentItemIndex, _currentItemIndex, false, true);
+				_blockCurrentItemUpdate = false;
 			}
-			_blockCurrentItemUpdate = false;
 		}
 
 		public override void DraggingStarted(UIScrollView scrollView)
