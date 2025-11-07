@@ -13,8 +13,10 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 {
 	public class CarouselViewController2 : ItemsViewController2<CarouselView>
 	{
+		bool _blockCurrentItemUpdate = false;
 		bool _isUpdating = false;
 		int _section = 0;
+		int _currentItemIndex = -1;
 		CarouselViewLoopManager _carouselViewLoopManager;
 
 		// We need to keep track of the old views to update the visual states
@@ -64,8 +66,16 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			InitializeCarouselViewLoopManager();
 			base.ViewDidLoad();
+
+			// Subscribe to orientation change notifications
+			NSNotificationCenter.DefaultCenter.AddObserver(UIDevice.OrientationDidChangeNotification, DeviceOrientationChanged);
 		}
 
+		void DeviceOrientationChanged(NSNotification notification)
+		{
+			_blockCurrentItemUpdate = true;
+			_currentItemIndex = ItemsView.Position;
+		}
 		public override void ViewWillLayoutSubviews()
 		{
 			base.ViewWillLayoutSubviews();
@@ -77,6 +87,11 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			base.ViewDidLayoutSubviews();
 			await UpdateInitialPosition();
+			if (_blockCurrentItemUpdate)
+			{
+				ScrollToPosition(_currentItemIndex, _currentItemIndex, false, true);
+				_blockCurrentItemUpdate = false;
+			}
 		}
 
 		public override void DraggingStarted(UIScrollView scrollView)
@@ -150,6 +165,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			InitialPositionSet = false;
 
 			UnsubscribeCollectionItemsSourceChanged(ItemsSource);
+
+			// Clean up orientation notification observer
+			NSNotificationCenter.DefaultCenter.RemoveObserver(this, UIDevice.OrientationDidChangeNotification, null);
 
 			_carouselViewLoopManager?.Dispose();
 			_carouselViewLoopManager = null;
@@ -372,6 +390,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			return _isUpdating;
 		}
+
+		internal bool _blockCurrentItemUpdating()
+		{
+			return _blockCurrentItemUpdate;
+		}
+
 		internal void UpdateLoop()
 		{
 			if (ItemsView is not CarouselView carousel)
