@@ -92,12 +92,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			base.ViewDidLayoutSubviews();
 			await UpdateInitialPosition();
-			_blockCurrentItemUpdate = false;
 			if (_orientationChange > 0)
 			{
 				_orientationChange = 0;
 				ScrollToPosition(_currentItemIndex, _currentItemIndex, false, true);
 			}
+			_blockCurrentItemUpdate = false;
 		}
 
 		public override void DraggingStarted(UIScrollView scrollView)
