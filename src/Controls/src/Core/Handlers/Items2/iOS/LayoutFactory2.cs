@@ -397,9 +397,12 @@ internal static class LayoutFactory2
 					}
 				}
 
-				//Update the CarouselView position
-				if (cv2Controller?._blockCurrentItemUpdating() == true)
+				if (cv2Controller.IsRotating())
+				{
 					return;
+				}
+
+				//Update the CarouselView position
 				cv2Controller?.SetPosition(carouselPosition);
 			};
 

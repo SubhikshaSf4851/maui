@@ -13,10 +13,11 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 {
 	public class CarouselViewController2 : ItemsViewController2<CarouselView>
 	{
-		bool _blockCurrentItemUpdate = false;
+		bool initialLoad = false;
+		CGSize _size = CGSize.Empty;
+		bool _isRotating = false;
 		bool _isUpdating = false;
 		int _section = 0;
-		int _currentItemIndex = -1;
 		CarouselViewLoopManager _carouselViewLoopManager;
 
 		// We need to keep track of the old views to update the visual states
@@ -66,31 +67,45 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			InitializeCarouselViewLoopManager();
 			base.ViewDidLoad();
-
+			initialLoad = true;
 			// Subscribe to orientation change notifications
 			NSNotificationCenter.DefaultCenter.AddObserver(UIDevice.OrientationDidChangeNotification, DeviceOrientationChanged);
 		}
 
 		void DeviceOrientationChanged(NSNotification notification)
 		{
-			_blockCurrentItemUpdate = true;
-			_currentItemIndex = ItemsView.Position;
+			if (initialLoad)
+			{
+				return;
+			}
+			_isRotating = true;
 		}
+
 		public override void ViewWillLayoutSubviews()
 		{
 			base.ViewWillLayoutSubviews();
 			UpdateVisualStates();
+			initialLoad = false;
 		}
-
 
 		public override async void ViewDidLayoutSubviews()
 		{
 			base.ViewDidLayoutSubviews();
 			await UpdateInitialPosition();
-			if (_blockCurrentItemUpdate)
+
+			if (CollectionView.Bounds.Size != _size && !initialLoad)
 			{
-				ScrollToPosition(_currentItemIndex, _currentItemIndex, false, true);
-				_blockCurrentItemUpdate = false;
+				_size = CollectionView.Bounds.Size;
+				BoundsSizeChanged();
+				_isRotating = false;
+			}
+		}
+
+		void BoundsSizeChanged()
+		{
+			if (ItemsView is CarouselView carousel)
+			{
+				carousel.ScrollTo(carousel.Position, position: Microsoft.Maui.Controls.ScrollToPosition.Center, animate: false);
 			}
 		}
 
@@ -391,9 +406,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			return _isUpdating;
 		}
 
-		internal bool _blockCurrentItemUpdating()
+		internal bool IsRotating()
 		{
-			return _blockCurrentItemUpdate;
+			return _isRotating;
 		}
 
 		internal void UpdateLoop()
