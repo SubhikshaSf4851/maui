@@ -187,6 +187,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			_carouselViewLoopManager?.Dispose();
 			_carouselViewLoopManager = null;
 			_isUpdating = false;
+			_isRotating = false;
+			initialLoad = false;
 		}
 
 		internal void UpdateScrollingConstraints()
