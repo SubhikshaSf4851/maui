@@ -317,7 +317,7 @@ namespace Microsoft.Maui.Controls.Handlers
 					autoSuggestBox.ItemTemplate = _currentSearchHandler.ItemTemplate is null ? null : (UI.Xaml.DataTemplate)WApp.Current.Resources["SearchHandlerItemTemplate"];
 					autoSuggestBox.Text = _currentSearchHandler.Query;
 					autoSuggestBox.UpdateTextOnSelect = false;
-
+					autoSuggestBox.FontSize = _currentSearchHandler.FontSize;
 					_currentSearchHandler.PropertyChanged += OnCurrentSearchHandlerPropertyChanged;
 
 					autoSuggestBox.Visibility = _currentSearchHandler.SearchBoxVisibility == SearchBoxVisibility.Hidden ? Microsoft.UI.Xaml.Visibility.Collapsed : Microsoft.UI.Xaml.Visibility.Visible;
@@ -430,6 +430,9 @@ namespace Microsoft.Maui.Controls.Handlers
 					break;
 				case nameof(SearchHandler.Query):
 					mauiNavView.AutoSuggestBox.Text = _currentSearchHandler.Query;
+					break;
+				case nameof(SearchHandler.FontSize):
+					mauiNavView.AutoSuggestBox.FontSize = _currentSearchHandler.FontSize;
 					break;
 			}
 		}
