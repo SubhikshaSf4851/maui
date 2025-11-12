@@ -14,7 +14,6 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 	public class CarouselViewController2 : ItemsViewController2<CarouselView>
 	{
 		bool initialLoad = false;
-		CGSize _size = CGSize.Empty;
 		bool _isRotating = false;
 		bool _isUpdating = false;
 		int _section = 0;
@@ -85,7 +84,10 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		{
 			base.ViewWillLayoutSubviews();
 			UpdateVisualStates();
-			initialLoad = false;
+			if (initialLoad)
+			{
+				initialLoad = false;
+			}
 		}
 
 		public override async void ViewDidLayoutSubviews()
@@ -93,9 +95,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			base.ViewDidLayoutSubviews();
 			await UpdateInitialPosition();
 
-			if (CollectionView.Bounds.Size != _size && !initialLoad)
+			if (_isRotating)
 			{
-				_size = CollectionView.Bounds.Size;
 				BoundsSizeChanged();
 				_isRotating = false;
 			}
@@ -103,6 +104,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 
 		void BoundsSizeChanged()
 		{
+			// Re-center the current item after bounds change to ensure proper positioning
+			// This is especially important during device rotation to maintain the correct scroll position
 			if (ItemsView is CarouselView carousel)
 			{
 				carousel.ScrollTo(carousel.Position, position: Microsoft.Maui.Controls.ScrollToPosition.Center, animate: false);
