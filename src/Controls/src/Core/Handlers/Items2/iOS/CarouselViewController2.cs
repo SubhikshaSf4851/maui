@@ -17,6 +17,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 		bool _isRotating = false;
 		bool _isUpdating = false;
 		int _section = 0;
+		NSObject _orientationObserver;
 		CarouselViewLoopManager _carouselViewLoopManager;
 
 		// We need to keep track of the old views to update the visual states
@@ -67,8 +68,12 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			InitializeCarouselViewLoopManager();
 			base.ViewDidLoad();
 			initialLoad = true;
-			// Subscribe to orientation change notifications
-			NSNotificationCenter.DefaultCenter.AddObserver(UIDevice.OrientationDidChangeNotification, DeviceOrientationChanged);
+			if (_orientationObserver == null)
+			{
+				_orientationObserver = NSNotificationCenter.DefaultCenter.AddObserver(
+					UIDevice.OrientationDidChangeNotification,
+					DeviceOrientationChanged);
+			}
 		}
 
 		void DeviceOrientationChanged(NSNotification notification)
@@ -185,7 +190,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items2
 			UnsubscribeCollectionItemsSourceChanged(ItemsSource);
 
 			// Clean up orientation notification observer
-			NSNotificationCenter.DefaultCenter.RemoveObserver(this, UIDevice.OrientationDidChangeNotification, null);
+			NSNotificationCenter.DefaultCenter.RemoveObserver(_orientationObserver);
+			_orientationObserver = null;
 
 			_carouselViewLoopManager?.Dispose();
 			_carouselViewLoopManager = null;
