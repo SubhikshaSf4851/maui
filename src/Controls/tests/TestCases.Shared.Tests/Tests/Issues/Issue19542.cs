@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using UITest.Appium;
 using UITest.Core;
 
@@ -13,7 +12,7 @@ public class Issue19542 : _IssuesUITest
 	public override string Issue => "Flyout item didnt take full width";
 
 	[Category(UITestCategories.Shell)]
-	public void VerifyShellFlyoutBackgroundImage()
+	public void Issue19542FlyoutItemTakeFullWidth()
 	{
 		App.WaitForElement("Label19542");
 		VerifyScreenshot();
