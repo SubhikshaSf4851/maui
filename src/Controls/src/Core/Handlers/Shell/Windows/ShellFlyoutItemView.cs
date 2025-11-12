@@ -125,26 +125,32 @@ namespace Microsoft.Maui.Controls.Platform
 
 		static RectangleGeometry GetClip(global::Windows.Foundation.Size availableSize, IView view, Size request)
 		{
+			double clipWidth = request.Width;
+			double clipHeight = request.Height;
 			if (view is Grid grid)
 			{
-				//Need to check whether grid have star rows/columns					
+				//Need to check whether grid have star rows/columns          
 				//if star present set clip to available size
 				for (int rowIndex = 0; rowIndex < grid.RowDefinitions.Count; rowIndex++)
 				{
 					if (grid.RowDefinitions[rowIndex].Height.IsStar)
 					{
-						return new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
+						clipHeight = availableSize.Height;
+						break;
 					}
 				}
+
 				for (int colIndex = 0; colIndex < grid.ColumnDefinitions.Count; colIndex++)
 				{
 					if (grid.ColumnDefinitions[colIndex].Width.IsStar)
 					{
-						return new RectangleGeometry { Rect = new WRect(0, 0, availableSize.Width, availableSize.Height) };
+						clipWidth = availableSize.Width;
+						break;
 					}
 				}
 			}
-			return new RectangleGeometry { Rect = new WRect(0, 0, request.Width, request.Height) };
+
+			return new RectangleGeometry { Rect = new WRect(0, 0, clipWidth, clipHeight) };
 		}
 
 		protected override global::Windows.Foundation.Size ArrangeOverride(global::Windows.Foundation.Size finalSize)
