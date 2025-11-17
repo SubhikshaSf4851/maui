@@ -297,6 +297,10 @@ namespace Microsoft.Maui.Controls.Platform
 		/// <inheritdoc/>
 		protected override WSize ArrangeOverride(WSize finalSize)
 		{
+			if(_visualElement is not null)
+			{
+				_visualElement.Frame = new Rect(0, 0, finalSize.Width, finalSize.Height);
+			}
 			return base.ArrangeOverride(finalSize);
 		}
 
