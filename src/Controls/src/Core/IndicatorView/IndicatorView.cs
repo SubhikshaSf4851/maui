@@ -32,7 +32,7 @@ namespace Microsoft.Maui.Controls
 		=> (((IndicatorView)bindable).IndicatorLayout as IndicatorStackLayout)?.ResetIndicators());
 
 		/// <summary>Bindable property for <see cref="IndicatorTemplate"/>.</summary>
-		public static readonly BindableProperty IndicatorTemplateProperty = BindableProperty.Create(nameof(IndicatorTemplate), typeof(DataTemplate), typeof(IndicatorView), default(DataTemplate), propertyChanging: (bindable, oldValue, newValue)
+		public static readonly BindableProperty IndicatorTemplateProperty = BindableProperty.Create(nameof(IndicatorTemplate), typeof(DataTemplate), typeof(IndicatorView), default(DataTemplate), propertyChanged: (bindable, oldValue, newValue)
 			=> UpdateIndicatorLayout((IndicatorView)bindable, newValue));
 
 		/// <summary>Bindable property for <see cref="HideSingle"/>.</summary>
@@ -149,6 +149,8 @@ namespace Microsoft.Maui.Controls
 			if (newValue != null)
 			{
 				indicatorView.IndicatorLayout = new IndicatorStackLayout(indicatorView) { Spacing = DefaultPadding };
+				(indicatorView.IndicatorLayout as IndicatorStackLayout)?.ResetIndicators();
+				indicatorView.Handler?.UpdateValue(nameof(IIndicatorView.IndicatorSize));
 			}
 			else if (indicatorView.IndicatorLayout is not null)
 			{
