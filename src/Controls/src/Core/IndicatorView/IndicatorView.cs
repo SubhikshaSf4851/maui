@@ -150,7 +150,18 @@ namespace Microsoft.Maui.Controls
 			{
 				indicatorView.IndicatorLayout = new IndicatorStackLayout(indicatorView) { Spacing = DefaultPadding };
 				(indicatorView.IndicatorLayout as IndicatorStackLayout)?.ResetIndicators();
-				indicatorView.Handler?.UpdateValue(nameof(IIndicatorView.IndicatorSize));
+
+				// Call platform-specific reset methods
+				if (indicatorView.Handler is Microsoft.Maui.Handlers.IndicatorViewHandler handler)
+				{
+#if IOS || MACCATALYST
+				handler.UpdateIndicator();
+#elif ANDROID
+				handler.PlatformView?.ResetIndicators();
+#else
+					indicatorView.Handler?.UpdateValue(nameof(IIndicatorView.IndicatorSize));
+#endif
+				}
 			}
 			else if (indicatorView.IndicatorLayout is not null)
 			{

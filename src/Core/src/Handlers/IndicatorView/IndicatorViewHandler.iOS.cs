@@ -63,7 +63,7 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateIndicatorShape(indicator);
 		}
 
-		void UpdateIndicator()
+		internal void UpdateIndicator()
 		{
 			if (VirtualView is ITemplatedIndicatorView iTemplatedIndicatorView)
 			{
