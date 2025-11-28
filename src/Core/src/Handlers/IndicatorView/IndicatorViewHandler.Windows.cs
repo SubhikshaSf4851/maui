@@ -49,7 +49,7 @@ namespace Microsoft.Maui.Handlers
 
 			void ClearIndicators()
 			{
-				PlatformView.Items.Clear();
+				PlatformView.ItemsSource = null;
 			}
 		}
 	}
