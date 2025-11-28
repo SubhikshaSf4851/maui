@@ -27,6 +27,11 @@ namespace Microsoft.Maui.Handlers
 		public static void MapSelectedIndicatorColor(IIndicatorViewHandler handler, IIndicatorView indicator) => handler.PlatformView?.UpdateIndicatorsColor();
 		public static void MapIndicatorShape(IIndicatorViewHandler handler, IIndicatorView indicator) => handler.PlatformView?.CreateIndicators();
 
+		internal static void MapIndicatorTemplate(IIndicatorViewHandler handler, IIndicatorView indicator)
+		{
+			(handler as IndicatorViewHandler)?.UpdateIndicator();
+		}
+
 		void UpdateIndicator()
 		{
 			if (VirtualView is ITemplatedIndicatorView iTemplatedIndicatorView)
