@@ -32,8 +32,8 @@ namespace Microsoft.Maui.Controls
 		=> (((IndicatorView)bindable).IndicatorLayout as IndicatorStackLayout)?.ResetIndicators());
 
 		/// <summary>Bindable property for <see cref="IndicatorTemplate"/>.</summary>
-		public static readonly BindableProperty IndicatorTemplateProperty = BindableProperty.Create(nameof(IndicatorTemplate), typeof(DataTemplate), typeof(IndicatorView), default(DataTemplate), propertyChanged: (bindable, oldValue, newValue)
-			=> UpdateIndicatorLayout((IndicatorView)bindable, newValue));
+		public static readonly BindableProperty IndicatorTemplateProperty = BindableProperty.Create(nameof(IndicatorTemplate), typeof(DataTemplate), typeof(IndicatorView), default(DataTemplate), propertyChanging: (bindable, oldValue, newValue)
+			=> UpdateIndicatorLayout((IndicatorView)bindable, newValue), propertyChanged: (bindable, oldValue, newValue) => (bindable as IndicatorView)?.Handler?.UpdateValue(nameof(ITemplatedIndicatorView.IndicatorsLayoutOverride)));
 
 		/// <summary>Bindable property for <see cref="HideSingle"/>.</summary>
 		public static readonly BindableProperty HideSingleProperty = BindableProperty.Create(nameof(HideSingle), typeof(bool), typeof(IndicatorView), true);
@@ -149,13 +149,11 @@ namespace Microsoft.Maui.Controls
 			if (newValue != null)
 			{
 				indicatorView.IndicatorLayout = new IndicatorStackLayout(indicatorView) { Spacing = DefaultPadding };
-				(indicatorView.IndicatorLayout as IndicatorStackLayout)?.ResetIndicators();
-				indicatorView.Handler?.UpdateValue(nameof(ITemplatedIndicatorView.IndicatorsLayoutOverride));
 			}
 			else if (indicatorView.IndicatorLayout is not null)
 			{
-				(indicatorView.IndicatorLayout as IndicatorStackLayout)?.Remove();
 				indicatorView.IndicatorLayout = null;
+				(indicatorView.IndicatorLayout as IndicatorStackLayout)?.Remove();
 			}
 		}
 

@@ -43,5 +43,10 @@
 		{
 			handler.PlatformView.ResetIndicators();
 		}
+
+		internal static void MapIndicatorTemplate(IIndicatorViewHandler handler, IIndicatorView indicator)
+		{
+			handler.PlatformView.ResetIndicators();
+		}
 	}
 }
