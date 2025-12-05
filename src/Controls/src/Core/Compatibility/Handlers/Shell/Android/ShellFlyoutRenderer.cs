@@ -260,6 +260,11 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 		protected virtual void OnShellPropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
+			if (e.PropertyName == Shell.FlowDirectionProperty.PropertyName)
+			{
+				UpdateFlowDirection();
+			}
+
 			if (_flyoutContent == null)
 				return;
 
@@ -274,10 +279,6 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				}
 
 				UpdateDrawerState();
-			}
-			else if (e.PropertyName == Shell.FlowDirectionProperty.PropertyName)
-			{
-				UpdateFlowDirection();
 			}
 		}
 
