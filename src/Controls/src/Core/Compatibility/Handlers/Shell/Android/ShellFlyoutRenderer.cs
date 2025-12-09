@@ -265,8 +265,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				UpdateFlowDirection();
 			}
 
-			if (_flyoutContent == null)
+			if (_flyoutContent is null)
+			{
 				return;
+			}
 
 			if (e.PropertyName == Shell.FlyoutIsPresentedProperty.PropertyName)
 			{
