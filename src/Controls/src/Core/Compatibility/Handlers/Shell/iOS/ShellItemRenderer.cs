@@ -127,7 +127,15 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				bool accept = true;
 				var r = RendererForViewController(viewController);
 				if (r is not null)
+				{
+					// Check if the section is enabled before allowing selection
+					if (!r.ShellSection.IsEnabled)
+					{
+						return false;
+					}
+
 					accept = ((IShellItemController)ShellItem).ProposeSection(r.ShellSection, false);
+				}
 
 				return accept;
 			};
