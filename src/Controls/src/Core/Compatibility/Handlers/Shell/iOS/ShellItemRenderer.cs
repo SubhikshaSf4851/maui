@@ -129,7 +129,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				if (r is not null)
 				{
 					// Check if the section is enabled before allowing selection
-					if (!r.ShellSection.IsEnabled)
+					if (!r.ShellSection.IsEnabled && (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26)))
 					{
 						return false;
 					}
@@ -254,6 +254,11 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				ViewControllers = viewControllers;
 				CustomizableViewControllers = Array.Empty<UIViewController>();
 
+				for (int tabIndex = 0; tabIndex < items.Count && tabIndex < TabBar.Items.Length; tabIndex++)
+				{
+					TabBar.Items[tabIndex].Enabled = items[tabIndex].IsEnabled;
+				}
+
 				if (goTo)
 					GoTo(ShellItem.CurrentItem);
 			}
@@ -322,6 +327,11 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			}
 			ViewControllers = viewControllers;
 			CustomizableViewControllers = Array.Empty<UIViewController>();
+
+			for (int tabIndex = 0; tabIndex < items.Count && tabIndex < TabBar.Items.Length; tabIndex++)
+			{
+				TabBar.Items[tabIndex].Enabled = items[tabIndex].IsEnabled;
+			}
 
 			UpdateTabBarHidden();
 
