@@ -125,16 +125,16 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			ShouldSelectViewController = (tabController, viewController) =>
 			{
 				bool accept = true;
-				var r = RendererForViewController(viewController);
-				if (r is not null)
+				var renderer = RendererForViewController(viewController);
+				if (renderer is not null)
 				{
 					// Check if the section is enabled before allowing selection
-					if (!r.ShellSection.IsEnabled && (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26)))
+					if (!renderer.ShellSection.IsEnabled && (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26)))
 					{
 						return false;
 					}
 
-					accept = ((IShellItemController)ShellItem).ProposeSection(r.ShellSection, false);
+					accept = ((IShellItemController)ShellItem).ProposeSection(renderer.ShellSection, false);
 				}
 
 				return accept;
