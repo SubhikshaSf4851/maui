@@ -254,7 +254,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				ViewControllers = viewControllers;
 				CustomizableViewControllers = Array.Empty<UIViewController>();
 
-				for (int tabIndex = 0; tabIndex < items.Count && tabIndex < TabBar.Items.Length; tabIndex++)
+				for (int tabIndex = 0; tabIndex < TabBar.Items.Length; tabIndex++)
 				{
 					TabBar.Items[tabIndex].Enabled = items[tabIndex].IsEnabled;
 				}
@@ -328,7 +328,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			ViewControllers = viewControllers;
 			CustomizableViewControllers = Array.Empty<UIViewController>();
 
-			for (int tabIndex = 0; tabIndex < items.Count && tabIndex < TabBar.Items.Length; tabIndex++)
+			for (int tabIndex = 0; tabIndex < TabBar.Items.Length; tabIndex++)
 			{
 				TabBar.Items[tabIndex].Enabled = items[tabIndex].IsEnabled;
 			}
