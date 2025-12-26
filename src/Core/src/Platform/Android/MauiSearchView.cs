@@ -34,6 +34,10 @@ namespace Microsoft.Maui.Platform
 				var image = FindViewById<ImageView>(searchCloseButtonIdentifier);
 
 				image?.SetMinimumWidth((int?)Context?.ToPixels(44) ?? 0);
+				image?.Click += (s, e) =>
+	   			{
+					SetQuery(string.Empty, false);
+				};
 			}
 		}
 	}
