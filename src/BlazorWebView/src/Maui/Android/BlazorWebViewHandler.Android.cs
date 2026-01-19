@@ -24,8 +24,7 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 		internal AndroidWebKitWebViewManager? WebviewManager => _webviewManager;
 		BlazorWebViewPredictiveBackCallback? _predictiveBackCallback;
 		BlazorAndroidWebView? _blazorAndroidWebView;
-		MauiAppCompatActivity? Activity =>
-			Microsoft.Maui.ApplicationModel.Platform.CurrentActivity as MauiAppCompatActivity;
+		MauiAppCompatActivity? Activity => Microsoft.Maui.ApplicationModel.Platform.CurrentActivity as MauiAppCompatActivity;
 
 		private ILogger? _logger;
 		internal ILogger Logger => _logger ??= Services!.GetService<ILogger<BlazorWebViewHandler>>() ?? NullLogger<BlazorWebViewHandler>.Instance;
@@ -65,13 +64,14 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 			_blazorAndroidWebView = blazorAndroidWebView;
 			return blazorAndroidWebView;
 		}
+
 		protected override void ConnectHandler(AWebView platformView)
 		{
 			base.ConnectHandler(platformView);
 
 			if (OperatingSystem.IsAndroidVersionAtLeast(33) && _predictiveBackCallback is null)
 			{
-				if (Activity != null)
+				if (Activity is not null)
 				{
 					_predictiveBackCallback = new BlazorWebViewPredictiveBackCallback(this);
 					Activity?.OnBackInvokedDispatcher?.RegisterOnBackInvokedCallback(0, _predictiveBackCallback);
@@ -208,6 +208,7 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 
 			return await _webviewManager.TryDispatchAsync(workItem);
 		}
+
 		sealed class BlazorWebViewPredictiveBackCallback : Java.Lang.Object, IOnBackInvokedCallback
 		{
 			BlazorWebViewHandler _weakBlazorWebViewHandler;
@@ -239,9 +240,7 @@ namespace Microsoft.AspNetCore.Components.WebView.Maui
 								return;
 							}
 							// Otherwise propagate back press to Activity
-							_weakBlazorWebViewHandler.Activity?
-								.OnBackPressedDispatcher?
-								.OnBackPressed();
+							_weakBlazorWebViewHandler.Activity?.OnBackPressedDispatcher?.OnBackPressed();
 						}
 					}
 				}
