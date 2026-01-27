@@ -354,6 +354,15 @@ namespace Microsoft.Maui.Platform
 				var right = GetSafeAreaForEdge(baseSafeArea.Right, 2);
 				var bottom = GetSafeAreaForEdge(baseSafeArea.Bottom, 3);
 
+				// In iOS 18+, adjust near-zero insets to exact zero to avoid minor layout shifts
+				if (OperatingSystem.IsIOSVersionAtLeast(18))
+				{
+					left = IsValueLessThanZero(left);
+					top = IsValueLessThanZero(top);
+					right = IsValueLessThanZero(right);
+					bottom = IsValueLessThanZero(bottom);
+				}
+
 				return new SafeAreaPadding(left, right, top, bottom);
 			}
 
@@ -364,6 +373,12 @@ namespace Microsoft.Maui.Platform
 			}
 
 			return baseSafeArea;
+		}
+
+		// Method to adjust less than zero values to exact zero
+		static double IsValueLessThanZero(double value)
+		{
+			return Math.Abs(value) < 0.1 ? 0 : value;
 		}
 
 		/// <summary>
