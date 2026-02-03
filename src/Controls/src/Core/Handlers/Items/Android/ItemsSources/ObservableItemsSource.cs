@@ -1,7 +1,10 @@
 ﻿#nullable disable
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
+using Microsoft.Maui.Controls.Internals;
 
 namespace Microsoft.Maui.Controls.Handlers.Items
 {
@@ -12,9 +15,15 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 		readonly ICollectionChangedNotifier _notifier;
 		readonly WeakNotifyCollectionChangedProxy _proxy = new();
 		readonly NotifyCollectionChangedEventHandler _collectionChanged;
+		readonly Dictionary<object, WeakNotifyPropertyChangedProxy> _itemPropertyProxies = new();
+		readonly PropertyChangedEventHandler _itemPropertyChangedHandler;
 		bool _disposed;
 
-		~ObservableItemsSource() => _proxy.Unsubscribe();
+		~ObservableItemsSource()
+		{
+			_proxy.Unsubscribe();
+			ClearItemSubscriptions();
+		}
 
 		public ObservableItemsSource(IEnumerable itemSource, BindableObject container, ICollectionChangedNotifier notifier)
 		{
@@ -23,6 +32,9 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			_notifier = notifier;
 			_collectionChanged = CollectionChanged;
 			_proxy.Subscribe((INotifyCollectionChanged)itemSource, _collectionChanged);
+
+			_itemPropertyChangedHandler = OnItemPropertyChanged;
+			SubscribeExistingItems();
 		}
 
 
@@ -83,6 +95,7 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			if (disposing)
 			{
 				_proxy.Unsubscribe();
+				ClearItemSubscriptions();
 			}
 		}
 
@@ -124,6 +137,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 					break;
 				case NotifyCollectionChangedAction.Reset:
 					_notifier.NotifyDataSetChanged();
+					ClearItemSubscriptions();
+					SubscribeExistingItems();
 					break;
 				default:
 					throw new ArgumentOutOfRangeException();
@@ -153,6 +168,14 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			startIndex = AdjustPositionForHeader(startIndex);
 			var count = args.NewItems.Count;
 
+			if (args.NewItems != null)
+			{
+				foreach (var item in args.NewItems)
+				{
+					SubscribeItem(item);
+				}
+			}
+
 			if (count == 1)
 			{
 				_notifier.NotifyItemInserted(this, startIndex);
@@ -171,6 +194,8 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 				// INCC implementation isn't giving us enough information to know where the removed items were in the
 				// collection. So the best we can do is a NotifyDataSetChanged()
 				_notifier.NotifyDataSetChanged();
+				ClearItemSubscriptions();
+				SubscribeExistingItems();
 				return;
 			}
 
@@ -178,6 +203,14 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 
 			// If we have a start index, we can be more clever about removing the item(s) (and get the nifty animations)
 			var count = args.OldItems.Count;
+
+			if (args.OldItems != null)
+			{
+				foreach (var item in args.OldItems)
+				{
+					UnsubscribeItem(item);
+				}
+			}
 
 			if (count == 1)
 			{
@@ -193,6 +226,22 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			var startIndex = args.NewStartingIndex > -1 ? args.NewStartingIndex : _itemsSource.IndexOf(args.NewItems[0]);
 			startIndex = AdjustPositionForHeader(startIndex);
 			var newCount = args.NewItems.Count;
+
+			if (args.OldItems != null)
+			{
+				foreach (var item in args.OldItems)
+				{
+					UnsubscribeItem(item);
+				}
+			}
+
+			if (args.NewItems != null)
+			{
+				foreach (var item in args.NewItems)
+				{
+					SubscribeItem(item);
+				}
+			}
 
 			if (newCount == args.OldItems.Count)
 			{
@@ -240,6 +289,87 @@ namespace Microsoft.Maui.Controls.Handlers.Items
 			}
 
 			return -1;
+		}
+
+		void SubscribeExistingItems()
+		{
+			foreach (var item in EnumerateItems())
+			{
+				SubscribeItem(item);
+			}
+		}
+
+		IEnumerable EnumerateItems()
+		{
+			if (_itemsSource is IList list)
+			{
+				for (int i = 0; i < list.Count; i++)
+					yield return list[i];
+			}
+			else
+			{
+				foreach (var item in _itemsSource)
+					yield return item;
+			}
+		}
+
+		void SubscribeItem(object item)
+		{
+			if (item is INotifyPropertyChanged inpc && !_itemPropertyProxies.ContainsKey(item))
+			{
+				var proxy = new WeakNotifyPropertyChangedProxy(inpc, _itemPropertyChangedHandler);
+				_itemPropertyProxies[item] = proxy;
+			}
+		}
+
+		void UnsubscribeItem(object item)
+		{
+			if (item != null && _itemPropertyProxies.TryGetValue(item, out var proxy))
+			{
+				proxy.Unsubscribe();
+				_itemPropertyProxies.Remove(item);
+			}
+		}
+
+		void ClearItemSubscriptions()
+		{
+			foreach (var kvp in _itemPropertyProxies)
+			{
+				kvp.Value.Unsubscribe();
+			}
+			_itemPropertyProxies.Clear();
+		}
+
+		void OnItemPropertyChanged(object sender, PropertyChangedEventArgs e)
+		{
+			if (!ObserveChanges)
+				return;
+
+			// Find the index of the changed item
+			int index = -1;
+			if (_itemsSource is IList list)
+			{
+				index = list.IndexOf(sender);
+			}
+			else
+			{
+				int i = 0;
+				foreach (var item in _itemsSource)
+				{
+					if (ReferenceEquals(item, sender) || (item != null && sender != null && item.Equals(sender)))
+					{
+						index = i;
+						break;
+					}
+					i++;
+				}
+			}
+
+			// Notify adapter if item was found
+			if (index >= 0)
+			{
+				_notifier.NotifyItemChanged(this, AdjustPositionForHeader(index));
+			}
 		}
 	}
 }
