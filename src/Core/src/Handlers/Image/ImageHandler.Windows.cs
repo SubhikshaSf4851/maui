@@ -139,7 +139,22 @@ namespace Microsoft.Maui.Handlers
 		/// <param name="image">The associated <see cref="Image"/> instance.</param>
 		public static void MapAspect(IImageHandler handler, IImage image)
 		{
-			handler.UpdateValue(nameof(IViewHandler.ContainerView));
+			if (image.Aspect == Aspect.AspectFill)
+			{
+				// 5ms delay prevents COMException when changing AspectFill from another page
+				// During cross-page navigation, the image control is in transitional state and
+				// container operations fail. Delay allows navigation to complete first.
+				Task.Run(async () =>
+				{
+					await Task.Delay(5);
+					handler.UpdateValue(nameof(IViewHandler.ContainerView));
+				});
+			}
+			else
+			{
+				handler.UpdateValue(nameof(IViewHandler.ContainerView));
+			}
+
 			handler.PlatformView?.UpdateAspect(image);
 			// Aspect changes may affect whether we cap to intrinsic size
 			if (handler is ImageHandler ih)
