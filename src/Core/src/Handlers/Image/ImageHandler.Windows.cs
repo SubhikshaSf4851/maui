@@ -10,6 +10,7 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class ImageHandler : ViewHandler<IImage, WImage>
 	{
+		bool _needsContainerUpdateOnLoad;
 		/// <inheritdoc/>
 		protected override WImage CreatePlatformView() => new WImage();
 
@@ -17,6 +18,7 @@ namespace Microsoft.Maui.Handlers
 		protected override void ConnectHandler(WImage platformView)
 		{
 			platformView.ImageOpened += OnImageOpened;
+			platformView.Loaded += OnImageLoaded;
 
 			base.ConnectHandler(platformView);
 		}
@@ -25,6 +27,7 @@ namespace Microsoft.Maui.Handlers
 		protected override void DisconnectHandler(WImage platformView)
 		{
 			platformView.ImageOpened -= OnImageOpened;
+			platformView.Loaded -= OnImageLoaded;
 
 			base.DisconnectHandler(platformView);
 			SourceLoader.Reset();
@@ -139,20 +142,17 @@ namespace Microsoft.Maui.Handlers
 		/// <param name="image">The associated <see cref="Image"/> instance.</param>
 		public static void MapAspect(IImageHandler handler, IImage image)
 		{
-			if (image.Aspect == Aspect.AspectFill)
+			if (handler is ImageHandler imghandler)
 			{
-				// 5ms delay prevents COMException when changing AspectFill from another page
-				// During cross-page navigation, the image control is in transitional state and
-				// container operations fail. Delay allows navigation to complete first.
-				Task.Run(async () =>
+				var platformView = imghandler.PlatformView;
+				if (platformView?.IsLoaded == true)
 				{
-					await Task.Delay(5);
 					handler.UpdateValue(nameof(IViewHandler.ContainerView));
-				});
-			}
-			else
-			{
-				handler.UpdateValue(nameof(IViewHandler.ContainerView));
+				}
+				else if (platformView is not null)
+				{
+					imghandler._needsContainerUpdateOnLoad = true;
+				}
 			}
 
 			handler.PlatformView?.UpdateAspect(image);
@@ -203,6 +203,15 @@ namespace Microsoft.Maui.Handlers
 				UpdateValue(nameof(IImage.IsAnimationPlaying));
 				// Apply platform constraints when the decoded size is available
 				UpdatePlatformMaxConstraints();
+			}
+		}
+
+		void OnImageLoaded(object sender, RoutedEventArgs e)
+		{
+			if (_needsContainerUpdateOnLoad)
+			{
+				UpdateValue(nameof(IViewHandler.ContainerView));
+				_needsContainerUpdateOnLoad = false;
 			}
 		}
 
