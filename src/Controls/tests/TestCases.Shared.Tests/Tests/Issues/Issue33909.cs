@@ -12,6 +12,7 @@ public class Issue33909 : _IssuesUITest
     {
     }
 
+    [Test]
     [Category(UITestCategories.Shell)]
     public void Issue33909ForegroundColorReset()
     {

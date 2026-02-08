@@ -1,22 +1,13 @@
-namespace Maui.Controls.Sample.Issues;
+namespace Controls.TestCases.HostApp.Issues;
 
 [Issue(IssueTracker.Github, 33909, "[iOS, Android, Catalyst] Shell.ForegroundColor does not reset correctly for the back button", PlatformAffected.iOS | PlatformAffected.Android | PlatformAffected.macOS)]
-public class Issue33909 : TestShell
+public class Issue33909 : Shell
 {
-    protected override void Init()
+    public Issue33909()
     {
         // Disable flyout to hide hamburger menu
         FlyoutBehavior = FlyoutBehavior.Disabled;
 
-        var mainPage = CreateMainPage();
-
-        AddContentPage(mainPage, "Main");
-        // Register route to second page
-        Routing.RegisterRoute("secondpage", typeof(Issue33909SecondPage));
-    }
-
-    private ContentPage CreateMainPage()
-    {
         var applyColorButton = new Button
         {
             Text = "Apply Red ForegroundColor",
@@ -52,7 +43,7 @@ public class Issue33909 : TestShell
             await Shell.Current.GoToAsync("secondpage");
         };
 
-        return new ContentPage
+        var mainPage = new ContentPage
         {
             Title = "Shell ForegroundColor Test",
             Content = new VerticalStackLayout
@@ -67,6 +58,22 @@ public class Issue33909 : TestShell
                 }
             }
         };
+
+        // Add the main page to the Shell structure directly
+        var shellItem = new ShellItem();
+        var shellSection = new ShellSection();
+        var shellContent = new ShellContent
+        {
+            Content = mainPage,
+            Title = "Main",
+            Route = "Main"
+        };
+
+        shellSection.Items.Add(shellContent);
+        shellItem.Items.Add(shellSection);
+        Items.Add(shellItem);
+        // Register route to second page
+        Routing.RegisterRoute("secondpage", typeof(Issue33909SecondPage));
     }
 }
 
@@ -75,7 +82,6 @@ public class Issue33909SecondPage : ContentPage
 {
     public Issue33909SecondPage()
     {
-        Title = "Second Page";
         Content = new VerticalStackLayout
         {
             Margin = new Thickness(20),
