@@ -38,5 +38,50 @@ namespace Microsoft.Maui.Platform
 			}
 
 		}
+
+		internal static void UpdateFlowDirection(this UIStepper platformStepper, IStepper stepper)
+		{
+			// Determine the effective FlowDirection (resolve MatchParent)
+			CoreGraphics.CGAffineTransform transform;
+
+			if (stepper.FlowDirection == FlowDirection.RightToLeft)
+			{
+				// Explicit RTL
+				transform = GetRTLTransform();
+			}
+			else if (stepper.FlowDirection == FlowDirection.LeftToRight)
+			{
+				// Explicit LTR
+				transform = CoreGraphics.CGAffineTransform.MakeIdentity();
+			}
+			else // FlowDirection.MatchParent
+			{
+				// Check parent's direction
+				var parent = (stepper as IView)?.Parent?.Handler?.PlatformView as UIView;
+				if (parent != null && parent.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft)
+				{
+					// Parent is RTL, so inherit RTL
+					transform = GetRTLTransform();
+				}
+				else
+				{
+					// Parent is LTR or unspecified, default to LTR
+					transform = CoreGraphics.CGAffineTransform.MakeIdentity();
+				}
+			}
+
+			// Apply transform to the stepper and its subviews
+			platformStepper.Transform = transform;
+			foreach (var subview in platformStepper.Subviews)
+			{
+				subview.Transform = transform;
+			}
+		}
+
+		static CoreGraphics.CGAffineTransform GetRTLTransform()
+		{
+			// Flip horizontally for RTL
+			return CoreGraphics.CGAffineTransform.MakeScale(-1, 1);
+		}
 	}
 }
