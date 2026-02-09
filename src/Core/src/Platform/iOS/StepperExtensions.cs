@@ -1,5 +1,6 @@
 ﻿using ObjCRuntime;
 using UIKit;
+using CoreGraphics;
 
 namespace Microsoft.Maui.Platform
 {
@@ -42,33 +43,7 @@ namespace Microsoft.Maui.Platform
 		internal static void UpdateFlowDirection(this UIStepper platformStepper, IStepper stepper)
 		{
 			// Determine the effective FlowDirection (resolve MatchParent)
-			CoreGraphics.CGAffineTransform transform;
-
-			if (stepper.FlowDirection == FlowDirection.RightToLeft)
-			{
-				// Explicit RTL
-				transform = GetRTLTransform();
-			}
-			else if (stepper.FlowDirection == FlowDirection.LeftToRight)
-			{
-				// Explicit LTR
-				transform = CoreGraphics.CGAffineTransform.MakeIdentity();
-			}
-			else // FlowDirection.MatchParent
-			{
-				// Check parent's direction
-				var parent = (stepper as IView)?.Parent?.Handler?.PlatformView as UIView;
-				if (parent != null && parent.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft)
-				{
-					// Parent is RTL, so inherit RTL
-					transform = GetRTLTransform();
-				}
-				else
-				{
-					// Parent is LTR or unspecified, default to LTR
-					transform = CoreGraphics.CGAffineTransform.MakeIdentity();
-				}
-			}
+			CGAffineTransform transform = GetFlowDirectionTransform(stepper.FlowDirection, stepper);
 
 			// Apply transform to the stepper and its subviews
 			platformStepper.Transform = transform;
@@ -78,10 +53,41 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
-		static CoreGraphics.CGAffineTransform GetRTLTransform()
+		internal static CGAffineTransform GetFlowDirectionTransform(FlowDirection flowDirection, IStepper stepper)
+		{
+			return flowDirection switch
+			{
+				FlowDirection.LeftToRight => GetLTRTransform(),
+				FlowDirection.RightToLeft => GetRTLTransform(),
+				_ => GetParentTransform(stepper), // Default to parent's direction if MatchParent
+			};
+		}
+
+		internal static CGAffineTransform GetParentTransform(IStepper stepper)
+		{
+			var parent = (stepper as IView)?.Parent?.Handler?.PlatformView as UIView;
+			if (parent is not null && parent.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft)
+			{
+				// Parent is RTL, so inherit RTL
+				return GetRTLTransform();
+			}
+			else
+			{
+				// Parent is LTR or unspecified, default to LTR
+				return GetLTRTransform();
+			}
+		}
+
+		internal static CGAffineTransform GetLTRTransform()
+		{
+			// Identity transform for LTR
+			return CGAffineTransform.MakeIdentity();
+		}
+
+		internal static CGAffineTransform GetRTLTransform()
 		{
 			// Flip horizontally for RTL
-			return CoreGraphics.CGAffineTransform.MakeScale(-1, 1);
+			return CGAffineTransform.MakeScale(-1, 1);
 		}
 	}
 }
