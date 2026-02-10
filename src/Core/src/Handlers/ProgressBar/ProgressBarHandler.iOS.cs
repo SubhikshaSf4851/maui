@@ -1,4 +1,6 @@
-﻿using ObjCRuntime;
+﻿using System;
+using CoreGraphics;
+using ObjCRuntime;
 using UIKit;
 
 namespace Microsoft.Maui.Handlers
@@ -18,6 +20,42 @@ namespace Microsoft.Maui.Handlers
 		public static void MapProgressColor(IProgressBarHandler handler, IProgress progress)
 		{
 			handler.PlatformView?.UpdateProgressColor(progress);
+		}
+
+		internal static void MapFlowDirection(IProgressBarHandler handler, IProgress progress)
+		{
+			var progressbar = handler.PlatformView;
+			UISemanticContentAttribute contentAttribute = GetSemanticContentAttribute(progress);
+			progressbar.SemanticContentAttribute = contentAttribute;
+
+			if (OperatingSystem.IsIOSVersionAtLeast(26))
+			{
+				// The progress bar has subviews that also need to be flipped for iOS 26 version
+				foreach (var subview in progressbar.Subviews)
+				{
+					subview.SemanticContentAttribute = contentAttribute;
+				}
+			}
+		}
+
+		static UISemanticContentAttribute GetSemanticContentAttribute(IProgress progress)
+		{
+			return progress.FlowDirection switch
+			{
+				FlowDirection.RightToLeft => UISemanticContentAttribute.ForceRightToLeft,
+				FlowDirection.LeftToRight => UISemanticContentAttribute.ForceLeftToRight,
+				_ => GetParentSemanticContentAttribute(progress)
+			};
+		}
+
+		static UISemanticContentAttribute GetParentSemanticContentAttribute(IProgress progress)
+		{
+			var parent = (progress as IView)?.Parent?.Handler?.PlatformView as UIView;
+			if (parent is not null && parent.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft)
+			{
+				return UISemanticContentAttribute.ForceRightToLeft;
+			}
+			return UISemanticContentAttribute.ForceLeftToRight;
 		}
 	}
 }
