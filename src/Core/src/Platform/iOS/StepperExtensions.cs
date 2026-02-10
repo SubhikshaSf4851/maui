@@ -1,4 +1,5 @@
-﻿using ObjCRuntime;
+﻿using System;
+using ObjCRuntime;
 using UIKit;
 using CoreGraphics;
 
@@ -40,54 +41,78 @@ namespace Microsoft.Maui.Platform
 
 		}
 
+		// Applies the semantic content attribute and visual transform
+		// to the UIStepper and its subviews based on the Stepper's FlowDirection
+		// and its parent's layout direction.
 		internal static void UpdateFlowDirection(this UIStepper platformStepper, IStepper stepper)
 		{
-			// Determine the effective FlowDirection (resolve MatchParent)
-			CGAffineTransform transform = GetFlowDirectionTransform(stepper.FlowDirection, stepper);
+			UISemanticContentAttribute contentAttribute = GetSemanticContentAttribute(stepper);
+			bool is26Version = OperatingSystem.IsIOSVersionAtLeast(26);
+			CGAffineTransform transform = GetCGAffineTransform(stepper);
+			platformStepper.SemanticContentAttribute = contentAttribute;
 
-			// Apply transform to the stepper and its subviews
-			platformStepper.Transform = transform;
+			if (is26Version)
+			{
+				platformStepper.Transform = transform;
+			}
+
 			foreach (var subview in platformStepper.Subviews)
 			{
-				subview.Transform = transform;
+				subview.SemanticContentAttribute = contentAttribute;
+				// Apply transform to the stepper subviews for 26 version . 
+				if (is26Version)
+				{
+					subview.Transform = transform;
+				}
 			}
 		}
 
-		internal static CGAffineTransform GetFlowDirectionTransform(FlowDirection flowDirection, IStepper stepper)
+		internal static UISemanticContentAttribute GetSemanticContentAttribute(IStepper stepper)
 		{
-			return flowDirection switch
+			return stepper.FlowDirection switch
 			{
-				FlowDirection.LeftToRight => GetLTRTransform(),
-				FlowDirection.RightToLeft => GetRTLTransform(),
+				FlowDirection.LeftToRight => UISemanticContentAttribute.ForceLeftToRight,
+				FlowDirection.RightToLeft => UISemanticContentAttribute.ForceRightToLeft,
+				_ => GetParentSemanticContentAttribute(stepper),
+			};
+		}
+
+		internal static UISemanticContentAttribute GetParentSemanticContentAttribute(IStepper stepper)
+		{
+			var parent = (stepper as IView)?.Parent?.Handler?.PlatformView as UIView;
+			if (parent is not null && parent.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft)
+			{
+				return UISemanticContentAttribute.ForceRightToLeft;
+			}
+			else
+			{
+				return UISemanticContentAttribute.ForceLeftToRight;
+			}
+		}
+
+		internal static CGAffineTransform GetCGAffineTransform(IStepper stepper)
+		{
+			return stepper.FlowDirection switch
+			{
+				FlowDirection.LeftToRight => CGAffineTransform.MakeIdentity(),
+				FlowDirection.RightToLeft => CGAffineTransform.MakeScale(-1, 1),
 				_ => GetParentTransform(stepper), // Default to parent's direction if MatchParent
 			};
 		}
 
 		internal static CGAffineTransform GetParentTransform(IStepper stepper)
 		{
-			var parent = (stepper as IView)?.Parent?.Handler?.PlatformView as UIView;
-			if (parent is not null && parent.SemanticContentAttribute == UISemanticContentAttribute.ForceRightToLeft)
+			var parentSemanticAttribute = GetParentSemanticContentAttribute(stepper);
+			if (parentSemanticAttribute == UISemanticContentAttribute.ForceRightToLeft)
 			{
-				// Parent is RTL, so inherit RTL
-				return GetRTLTransform();
+				// Flip horizontally for RTL
+				return CGAffineTransform.MakeScale(-1, 1);
 			}
 			else
 			{
-				// Parent is LTR or unspecified, default to LTR
-				return GetLTRTransform();
+				// Identity transform for LTR
+				return CGAffineTransform.MakeIdentity();
 			}
-		}
-
-		internal static CGAffineTransform GetLTRTransform()
-		{
-			// Identity transform for LTR
-			return CGAffineTransform.MakeIdentity();
-		}
-
-		internal static CGAffineTransform GetRTLTransform()
-		{
-			// Flip horizontally for RTL
-			return CGAffineTransform.MakeScale(-1, 1);
 		}
 	}
 }
