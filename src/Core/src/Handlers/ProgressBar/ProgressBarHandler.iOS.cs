@@ -28,9 +28,10 @@ namespace Microsoft.Maui.Handlers
 			UISemanticContentAttribute contentAttribute = GetSemanticContentAttribute(progress);
 			progressbar.SemanticContentAttribute = contentAttribute;
 
+			// On iOS 26, UIProgressView no longer applies the SemanticContentAttribute to its internal subviews, so update
+			// each subview explicitly to keep flow direction consistent.
 			if (OperatingSystem.IsIOSVersionAtLeast(26))
 			{
-				// The progress bar has subviews that also need to be flipped for iOS 26 version
 				foreach (var subview in progressbar.Subviews)
 				{
 					subview.SemanticContentAttribute = contentAttribute;
