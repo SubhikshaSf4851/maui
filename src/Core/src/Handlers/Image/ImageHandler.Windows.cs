@@ -10,7 +10,6 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class ImageHandler : ViewHandler<IImage, WImage>
 	{
-		bool _needsContainerUpdateOnLoad;
 		/// <inheritdoc/>
 		protected override WImage CreatePlatformView() => new WImage();
 
@@ -18,7 +17,6 @@ namespace Microsoft.Maui.Handlers
 		protected override void ConnectHandler(WImage platformView)
 		{
 			platformView.ImageOpened += OnImageOpened;
-			platformView.Loaded += OnImageLoaded;
 
 			base.ConnectHandler(platformView);
 		}
@@ -27,7 +25,6 @@ namespace Microsoft.Maui.Handlers
 		protected override void DisconnectHandler(WImage platformView)
 		{
 			platformView.ImageOpened -= OnImageOpened;
-			platformView.Loaded -= OnImageLoaded;
 
 			base.DisconnectHandler(platformView);
 			SourceLoader.Reset();
@@ -151,7 +148,7 @@ namespace Microsoft.Maui.Handlers
 				}
 				else if (platformView is not null)
 				{
-					imghandler._needsContainerUpdateOnLoad = true;
+					platformView.Loaded += imghandler.OnImageLoaded;
 				}
 			}
 
@@ -159,6 +156,15 @@ namespace Microsoft.Maui.Handlers
 			// Aspect changes may affect whether we cap to intrinsic size
 			if (handler is ImageHandler ih)
 				ih.UpdatePlatformMaxConstraints();
+		}
+
+		void OnImageLoaded(object sender, RoutedEventArgs e)
+		{
+			if (sender is WImage platformView)
+			{
+				platformView.Loaded -= OnImageLoaded;
+				UpdateValue(nameof(IViewHandler.ContainerView));
+			}
 		}
 
 		/// <summary>
@@ -203,15 +209,6 @@ namespace Microsoft.Maui.Handlers
 				UpdateValue(nameof(IImage.IsAnimationPlaying));
 				// Apply platform constraints when the decoded size is available
 				UpdatePlatformMaxConstraints();
-			}
-		}
-
-		void OnImageLoaded(object sender, RoutedEventArgs e)
-		{
-			if (_needsContainerUpdateOnLoad)
-			{
-				UpdateValue(nameof(IViewHandler.ContainerView));
-				_needsContainerUpdateOnLoad = false;
 			}
 		}
 
