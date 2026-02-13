@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using WebView2Control = Microsoft.Web.WebView2.Wpf.WebView2CompositionControl;
+using WebView2Control = Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView2CompositionControl;
 
 namespace Microsoft.AspNetCore.Components.WebView.Wpf
 {
@@ -414,4 +414,14 @@ namespace Microsoft.AspNetCore.Components.WebView.Wpf
 #pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
 		}
 	}
+
+
+	public class BlazorWebView2CompositionControl : Microsoft.Web.WebView2.Wpf.WebView2CompositionControl
+	{
+		protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+		{
+			// Do nothing - allow event to pass through to WebView content
+		}
+	}
+
 }

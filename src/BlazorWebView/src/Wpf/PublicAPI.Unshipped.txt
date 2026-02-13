@@ -1,1 +1,6 @@
 #nullable enable
+*REMOVED*Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView.WebView.get -> Microsoft.Web.WebView2.Wpf.WebView2CompositionControl!
+Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView.WebView.get -> Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView2CompositionControl!
+Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView2CompositionControl
+Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView2CompositionControl.BlazorWebView2CompositionControl() -> void
+override Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView2CompositionControl.OnMouseDoubleClick(System.Windows.Input.MouseButtonEventArgs! e) -> void
