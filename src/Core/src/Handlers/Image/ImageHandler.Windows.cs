@@ -139,20 +139,25 @@ namespace Microsoft.Maui.Handlers
 		/// <param name="image">The associated <see cref="Image"/> instance.</param>
 		public static void MapAspect(IImageHandler handler, IImage image)
 		{
+			if (handler.PlatformView is null)
+			{
+				return;
+			}
+
 			if (handler is ImageHandler imghandler)
 			{
 				var platformView = imghandler.PlatformView;
-				if (platformView?.IsLoaded == true)
+				if (platformView.IsLoaded)
 				{
 					handler.UpdateValue(nameof(IViewHandler.ContainerView));
 				}
-				else if (platformView is not null)
+				else
 				{
 					platformView.Loaded += imghandler.OnImageLoaded;
 				}
 			}
 
-			handler.PlatformView?.UpdateAspect(image);
+			handler.PlatformView.UpdateAspect(image);
 			// Aspect changes may affect whether we cap to intrinsic size
 			if (handler is ImageHandler ih)
 				ih.UpdatePlatformMaxConstraints();
