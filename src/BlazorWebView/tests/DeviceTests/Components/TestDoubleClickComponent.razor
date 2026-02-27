@@ -1,0 +1,12 @@
+<div id="doubleClickTarget" @ondblclick="OnDoubleClick" style="width:100px;height:100px;">Double-click here</div>
+<div id="controlDiv">@controlValue</div>
+
+@code
+{
+    int controlValue; // used to control test flow
+
+    void OnDoubleClick()
+    {
+        controlValue++;
+    }
+}

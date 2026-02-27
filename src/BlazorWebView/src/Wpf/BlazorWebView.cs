@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using WebView2Control = Microsoft.Web.WebView2.Wpf.WebView2CompositionControl;
+using WebView2Control = Microsoft.AspNetCore.Components.WebView.Wpf.BlazorWebView2CompositionControl;
 
 namespace Microsoft.AspNetCore.Components.WebView.Wpf
 {
@@ -414,4 +414,19 @@ namespace Microsoft.AspNetCore.Components.WebView.Wpf
 #pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
 		}
 	}
+
+
+	public class BlazorWebView2CompositionControl : Microsoft.Web.WebView2.Wpf.WebView2CompositionControl
+	{
+		// Temporary workaround for an issue where DoubleClick events are not fired in WebView2CompositionControl.
+		// Reference: https://github.com/MicrosoftEdge/WebView2Feedback/issues/5099
+		// This override prevents handling the double-click event at the control level,
+		// allowing it to propagate to the underlying WebView content.
+		// TODO: Remove this custom control once the upstream issue is resolved.
+		protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+		{
+			// Intentionally left blank to allow event propagation.
+		}
+	}
+
 }
