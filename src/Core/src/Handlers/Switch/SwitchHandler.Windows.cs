@@ -5,10 +5,27 @@ namespace Microsoft.Maui.Handlers
 {
 	public partial class SwitchHandler : ViewHandler<ISwitch, ToggleSwitch>
 	{
+		int _updatingIsOn;
+
 		protected override ToggleSwitch CreatePlatformView() => new ToggleSwitch() { OffContent = null, OnContent = null };
 
 		public static void MapIsOn(ISwitchHandler handler, ISwitch view)
 		{
+			if (handler is SwitchHandler switchHandler)
+			{
+				switchHandler._updatingIsOn++;
+
+				try
+				{
+					handler.PlatformView?.UpdateIsToggled(view);
+				}
+				finally
+				{
+					switchHandler._updatingIsOn--;
+				}
+				return;
+			}
+
 			handler.PlatformView?.UpdateIsToggled(view);
 		}
 
@@ -38,7 +55,7 @@ namespace Microsoft.Maui.Handlers
 
 		void OnToggled(object sender, UI.Xaml.RoutedEventArgs e)
 		{
-			if (VirtualView is null || PlatformView is null || VirtualView.IsOn == PlatformView.IsOn)
+			if (_updatingIsOn > 0 || VirtualView is null || PlatformView is null || VirtualView.IsOn == PlatformView.IsOn)
 				return;
 
 			VirtualView.IsOn = PlatformView.IsOn;

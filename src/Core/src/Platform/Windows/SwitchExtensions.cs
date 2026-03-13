@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
 
@@ -10,7 +10,10 @@ namespace Microsoft.Maui.Platform
 		{
 			if (toggleSwitch is not null)
 			{
-				toggleSwitch.IsOn = view?.IsOn ?? false;
+				var isOn = view?.IsOn ?? false;
+
+				if (toggleSwitch.IsOn != isOn)
+					toggleSwitch.IsOn = isOn;
 			}
 		}
 
