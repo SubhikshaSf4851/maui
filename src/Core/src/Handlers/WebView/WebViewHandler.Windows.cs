@@ -391,6 +391,7 @@ namespace Microsoft.Maui.Handlers
 				if (Handler is WebViewHandler handler)
 				{
 					sender.UpdateUserAgent(handler.VirtualView);
+					sender.UpdateBackground(handler.VirtualView);
 					if (sender.Source is not null)
 					{
 						handler.SyncPlatformCookies(sender.Source.ToString()).FireAndForget();
