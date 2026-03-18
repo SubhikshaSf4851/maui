@@ -29,20 +29,14 @@ namespace Microsoft.Maui.Platform
 				platformWebView.DefaultBackgroundColor = solidPaint.Color.ToWindowsColor();
 
 				if (platformWebView.CoreWebView2 is not null)
-					platformWebView.CoreWebView2.Profile.PreferredColorScheme = GetPreferredColorScheme(solidPaint.Color);
+					platformWebView.CoreWebView2.Profile.PreferredColorScheme = solidPaint.Color.GetLuminosity() >= 0.5f
+						? CoreWebView2PreferredColorScheme.Light
+						: CoreWebView2PreferredColorScheme.Dark;
 			}
 			else if (platformWebView.CoreWebView2 is not null)
 			{
 				platformWebView.CoreWebView2.Profile.PreferredColorScheme = CoreWebView2PreferredColorScheme.Auto;
 			}
-		}
-
-		static CoreWebView2PreferredColorScheme GetPreferredColorScheme(Color color)
-		{
-			// Use simple luminance: average R+G+B > 0.5 → treat as light color → force light mode
-			return (color.Red + color.Green + color.Blue) / 3f > 0.5f
-				? CoreWebView2PreferredColorScheme.Light
-				: CoreWebView2PreferredColorScheme.Dark;
 		}
 
 		public static void UpdateUserAgent(this WebView2 platformWebView, IWebView webView)
