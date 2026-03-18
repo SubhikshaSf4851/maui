@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml.Controls;
 
 namespace Microsoft.Maui.Platform
@@ -18,6 +19,12 @@ namespace Microsoft.Maui.Platform
 
 				platformWebView.UpdateCanGoBackForward(webView);
 			}
+		}
+
+		public static void UpdateBackground(this WebView2 platformWebView, IWebView webView)
+		{
+			if (webView.Background is SolidPaint solidPaint)
+				platformWebView.DefaultBackgroundColor = solidPaint.Color.ToWindowsColor();
 		}
 
 		public static void UpdateUserAgent(this WebView2 platformWebView, IWebView webView)

@@ -91,6 +91,11 @@ namespace Microsoft.Maui.Handlers
 			handler.PlatformView?.UpdateSource(webView, webViewDelegate);
 		}
 
+		public static void MapBackground(IWebViewHandler handler, IWebView webView)
+		{
+			handler.PlatformView?.UpdateBackground(webView);
+		}
+
 		public static void MapUserAgent(IWebViewHandler handler, IWebView webView)
 		{
 			handler.PlatformView?.UpdateUserAgent(webView);
