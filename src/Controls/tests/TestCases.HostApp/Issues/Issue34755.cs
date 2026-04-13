@@ -19,7 +19,7 @@ public class Issue34755 : ContentPage
 
 		var readyLabel = new Label
 		{
-			Text = "Ready",
+			Text = "Test passes if the image is rendered correctly in the GraphicsView above. The image should be resized to fit within a area while maintaining its aspect ratio.",
 			AutomationId = "ReadyLabel"
 		};
 
