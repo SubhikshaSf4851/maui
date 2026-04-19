@@ -50,6 +50,10 @@ namespace Microsoft.Maui.Handlers
 		void Disconnect(WebView2 platformView)
 		{
 			platformView.Loaded -= OnWebViewLoaded;
+			// Unsubscribe MauiWebView-specific events before closing to prevent
+			// NullReferenceException from in-flight NavigationStarting events
+			if (platformView is MauiWebView mauiWebView)
+				mauiWebView.Disconnect();
 			_proxy.Disconnect(platformView);
 			if (platformView.CoreWebView2 is not null)
 			{
@@ -161,6 +165,13 @@ namespace Microsoft.Maui.Handlers
 			{
 				await SyncPlatformCookiesToVirtualView(url);
 
+				// Re-check after await — disconnect may have occurred while cookies were syncing
+				if (VirtualView is null)
+				{
+					CurrentNavigationEvent = WebNavigationEvent.NewPage;
+					return;
+				}
+
 				VirtualView.Navigated(evnt, url, result);
 				PlatformView?.UpdateCanGoBackForward(VirtualView);
 			}
@@ -175,7 +186,7 @@ namespace Microsoft.Maui.Handlers
 
 		async Task SyncPlatformCookiesToVirtualView(string url)
 		{
-			var myCookieJar = VirtualView.Cookies;
+			var myCookieJar = VirtualView?.Cookies;
 
 			if (myCookieJar is null)
 				return;
@@ -185,10 +196,17 @@ namespace Microsoft.Maui.Handlers
 			if (uri is null)
 				return;
 
+			if (PlatformView?.CoreWebView2 is null)
+				return;
+
 			var cookies = myCookieJar.GetCookies(uri);
 			var retrieveCurrentWebCookies = await GetCookiesFromPlatformStore(url);
 
-			var platformCookies = await PlatformView.CoreWebView2.CookieManager.GetCookiesAsync(uri.AbsoluteUri);
+			// Re-check CoreWebView2 after awaiting — it can be null after disconnect
+			if (PlatformView?.CoreWebView2 is not CoreWebView2 coreWebView2)
+				return;
+
+			var platformCookies = await coreWebView2.CookieManager.GetCookiesAsync(uri.AbsoluteUri);
 
 			foreach (Cookie cookie in cookies)
 			{
@@ -282,6 +300,9 @@ namespace Microsoft.Maui.Handlers
 
 		Task<IReadOnlyList<CoreWebView2Cookie>> GetCookiesFromPlatformStore(string url)
 		{
+			if (PlatformView?.CoreWebView2 is null)
+				return Task.FromResult<IReadOnlyList<CoreWebView2Cookie>>(Array.Empty<CoreWebView2Cookie>());
+
 			return PlatformView.CoreWebView2.CookieManager.GetCookiesAsync(url).AsTask();
 		}
 
@@ -370,9 +391,9 @@ namespace Microsoft.Maui.Handlers
 
 			void OnWindowClosed(object sender, WindowEventArgs args)
 			{
-				if (Handler is WebViewHandler handler)
+				if (Handler is WebViewHandler handler && handler.PlatformView is { } platformView)
 				{
-					handler.Disconnect(handler.PlatformView);
+					handler.Disconnect(platformView);
 				}
 			}
 

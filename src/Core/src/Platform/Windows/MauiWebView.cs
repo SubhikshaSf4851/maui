@@ -10,6 +10,7 @@ namespace Microsoft.Maui.Platform
 	public partial class MauiWebView : WebView2, IWebViewDelegate
 	{
 		readonly WeakReference<WebViewHandler> _handler;
+		TypedEventHandler<WebView2, Web.WebView2.Core.CoreWebView2NavigationStartingEventArgs>? _navigationStartingHandler;
 
 		[Obsolete("Constructor is no longer used, please use an overloaded version.")]
 #pragma warning disable CS8618
@@ -103,23 +104,39 @@ namespace Microsoft.Maui.Platform
 
 		void SetupPlatformEvents()
 		{
-			NavigationStarting += (sender, args) =>
+			_navigationStartingHandler = OnMauiNavigationStarting;
+			NavigationStarting += _navigationStartingHandler;
+		}
+
+		void OnMauiNavigationStarting(WebView2 sender, Web.WebView2.Core.CoreWebView2NavigationStartingEventArgs args)
+		{
+			// CoreWebView2 can be null during rapid dispose cycles — guard before access
+			if (CoreWebView2 is null)
+				return;
+
+			// Auto map local virtual app dir host, e.g. if navigating back to local site from a link to an external site
+			if (IsUriWithLocalScheme(args?.Uri) ||
+				IsWebView2DataUriWithBaseUrl(args?.Uri))
 			{
-				// Auto map local virtual app dir host, e.g. if navigating back to local site from a link to an external site
-				if (IsUriWithLocalScheme(args?.Uri) ||
-					IsWebView2DataUriWithBaseUrl(args?.Uri))
-				{
-					CoreWebView2.SetVirtualHostNameToFolderMapping(
-						LocalHostName,
-						ApplicationPath,
-						Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
-				}
-				// Auto unmap local virtual app dir host if navigating to any other potentially unsafe domain
-				else
-				{
-					CoreWebView2.ClearVirtualHostNameToFolderMapping(LocalHostName);
-				}
-			};
+				CoreWebView2.SetVirtualHostNameToFolderMapping(
+					LocalHostName,
+					ApplicationPath,
+					Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+			}
+			// Auto unmap local virtual app dir host if navigating to any other potentially unsafe domain
+			else
+			{
+				CoreWebView2.ClearVirtualHostNameToFolderMapping(LocalHostName);
+			}
+		}
+
+		internal void Disconnect()
+		{
+			if (_navigationStartingHandler is not null)
+			{
+				NavigationStarting -= _navigationStartingHandler;
+				_navigationStartingHandler = null;
+			}
 		}
 
 		static bool IsUriWithLocalScheme(string? uri)
