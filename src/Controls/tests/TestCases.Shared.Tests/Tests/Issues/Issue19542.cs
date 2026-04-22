@@ -11,6 +11,7 @@ public class Issue19542 : _IssuesUITest
 	}
 	public override string Issue => "Flyout item didnt take full width";
 
+	[Test]
 	[Category(UITestCategories.Shell)]
 	public void Issue19542FlyoutItemTakeFullWidth()
 	{
