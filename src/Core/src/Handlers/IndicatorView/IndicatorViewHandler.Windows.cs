@@ -49,6 +49,9 @@ namespace Microsoft.Maui.Handlers
 
 			void ClearIndicators()
 			{
+				// When using a templated indicator, ItemsSource is set. Clearing Items directly
+				// while ItemsSource is active throws on WinUI.
+				PlatformView.ItemsSource = null;
 				PlatformView.Items.Clear();
 			}
 		}
