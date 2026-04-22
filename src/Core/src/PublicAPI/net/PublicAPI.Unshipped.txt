@@ -1,1 +1,2 @@
-#nullable enable
+﻿#nullable enable
+static Microsoft.Maui.Handlers.IndicatorViewHandler.MapIndicatorTemplate(Microsoft.Maui.Handlers.IIndicatorViewHandler! handler, Microsoft.Maui.IIndicatorView! indicator) -> void

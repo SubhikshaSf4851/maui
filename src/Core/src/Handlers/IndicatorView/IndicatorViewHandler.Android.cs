@@ -62,5 +62,10 @@ namespace Microsoft.Maui.Handlers
 		{
 			handler.PlatformView.ResetIndicators();
 		}
+
+		public static void MapIndicatorTemplate(IIndicatorViewHandler handler, IIndicatorView indicator)
+		{
+			handler.PlatformView.ResetIndicators();
+		}
 	}
 }
