@@ -1,5 +1,6 @@
 ﻿using Android.Content;
 using Android.Views;
+using Android.Views.InputMethods;
 using Android.Widget;
 using Java.IO;
 using SearchView = AndroidX.AppCompat.Widget.SearchView;
@@ -21,6 +22,11 @@ namespace Microsoft.Maui.Platform
 			MaxWidth = int.MaxValue;
 
 			_queryEditor = this.GetFirstChildOfType<EditText>();
+
+			if (_queryEditor != null)
+			{
+				_queryEditor.ImeOptions = (ImeAction)((int)_queryEditor.ImeOptions | (int)ImeFlags.NoFullscreen);
+			}
 
 			if (_queryEditor?.LayoutParameters is LinearLayout.LayoutParams layoutParams)
 			{
