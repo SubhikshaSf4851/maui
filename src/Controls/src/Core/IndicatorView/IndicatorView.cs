@@ -224,13 +224,19 @@ namespace Microsoft.Maui.Controls
 
 		static void UpdateIndicatorLayout(IndicatorView indicatorView, object newValue)
 		{
+			// Always disconnect the old layout first so it stops responding to
+			// PropertyChanged events while its children are being detached from
+			// the visual tree. Failing to do so causes a COMException on Windows
+			// when switching between templates (ResetIndicators sets BackgroundColor
+			// on children that are mid-detach, triggering MapContainerView).
+			(indicatorView.IndicatorLayout as IndicatorStackLayout)?.Remove();
+
 			if (newValue != null)
 			{
 				indicatorView.IndicatorLayout = new IndicatorStackLayout(indicatorView) { Spacing = DefaultPadding };
 			}
-			else if (indicatorView.IndicatorLayout is not null)
+			else
 			{
-				(indicatorView.IndicatorLayout as IndicatorStackLayout)?.Remove();
 				indicatorView.IndicatorLayout = null;
 			}
 		}
