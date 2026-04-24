@@ -23,7 +23,7 @@ namespace Microsoft.Maui.Platform
 
 			_queryEditor = this.GetFirstChildOfType<EditText>();
 
-			if (_queryEditor != null)
+			if (_queryEditor is not null)
 			{
 				_queryEditor.ImeOptions = (ImeAction)((int)_queryEditor.ImeOptions | (int)ImeFlags.NoFullscreen);
 			}
