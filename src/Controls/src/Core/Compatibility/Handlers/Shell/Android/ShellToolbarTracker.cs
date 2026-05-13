@@ -496,7 +496,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				if (backButtonVisibleFromBehavior && (backButtonVisible || !defaultDrawerArrowDrawable))
 					toolbar.NavigationIcon = icon;
 			}
-			else if (_flyoutBehavior == FlyoutBehavior.Flyout || (!defaultDrawerArrowDrawable && backButtonVisible))
+			else if (backButtonVisibleFromBehavior && (_flyoutBehavior == FlyoutBehavior.Flyout || (!defaultDrawerArrowDrawable && backButtonVisible)))
 			{
 				bool drawerEnabled = isEnabled && icon != null;
 				_drawerToggle.DrawerIndicatorEnabled = drawerEnabled;

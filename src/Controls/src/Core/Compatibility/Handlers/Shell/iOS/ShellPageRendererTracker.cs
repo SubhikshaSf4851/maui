@@ -579,8 +579,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 						}
 					}
 				}
-				// Show hamburger icon if it's the root page, or if the back button is not visible.
-				else if (String.IsNullOrWhiteSpace(text) && (IsRootPage || !backButtonVisible) && _flyoutBehavior == FlyoutBehavior.Flyout)
+				// Show hamburger icon only on root page when navigation icon is not explicitly hidden.
+				else if (String.IsNullOrWhiteSpace(text) && IsRootPage && backButtonVisible && _flyoutBehavior == FlyoutBehavior.Flyout)
 				{
 					icon = DrawHamburger();
 				}
