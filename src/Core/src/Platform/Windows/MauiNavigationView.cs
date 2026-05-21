@@ -13,6 +13,7 @@ namespace Microsoft.Maui.Platform
 	public partial class MauiNavigationView : NavigationView
 	{
 		private int _currentFlyoutBehavior = -1;
+		private bool _flyoutIconIsVisible = true;
 
 		internal StackPanel? TopNavArea { get; private set; }
 		internal ItemsRepeater? TopNavMenuItemsHost { get; private set; }
@@ -181,7 +182,7 @@ namespace Microsoft.Maui.Platform
 			switch (flyoutBehavior)
 			{
 				case FlyoutBehavior.Flyout:
-					IsPaneToggleButtonVisible = true;
+					IsPaneToggleButtonVisible = _flyoutIconIsVisible;
 					var flyoutMode = FlyoutPaneDisplayMode ?? NavigationViewPaneDisplayMode.LeftMinimal;
 					// WinUI bug: Setting PaneDisplayMode to the same value and updating SelectedItem during navigation
 					// causes the selection and selected item indicator to not update correctly.
@@ -201,6 +202,18 @@ namespace Microsoft.Maui.Platform
 					IsPaneToggleButtonVisible = false;
 					IsPaneOpen = false;
 					break;
+			}
+		}
+
+		internal void UpdateFlyoutIconIsVisible(bool isVisible)
+		{
+			_flyoutIconIsVisible = isVisible;
+
+			// Only toggle the button when the flyout is in the mode that shows it.
+			// Locked and Disabled behaviors always hide the button regardless.
+			if (_currentFlyoutBehavior == (int)FlyoutBehavior.Flyout)
+			{
+				IsPaneToggleButtonVisible = isVisible;
 			}
 		}
 

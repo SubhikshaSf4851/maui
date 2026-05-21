@@ -33,6 +33,7 @@ namespace Microsoft.Maui.Controls.Handlers
 					[nameof(Shell.FlyoutItems)] = MapFlyoutItems,
 #if WINDOWS
 					[nameof(Shell.FlyoutIcon)] = MapFlyoutIcon,
+					[nameof(Shell.FlyoutIconIsVisible)] = MapFlyoutIconIsVisible,
 					[nameof(Shell.FlyoutContentTemplate)] = MapFlyout,
 					[nameof(Shell.FlowDirection)] = MapFlowDirection,
 					[nameof(Shell.FlyoutBackgroundImage)] = MapFlyoutBackgroundImage,

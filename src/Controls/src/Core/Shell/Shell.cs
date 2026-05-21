@@ -1292,6 +1292,31 @@ namespace Microsoft.Maui.Controls
 			BindableProperty.Create(nameof(FlyoutIcon), typeof(ImageSource), typeof(Shell), null);
 
 		/// <summary>
+		/// Controls the visibility of the flyout hamburger icon in the navigation bar.
+		/// When set to <see langword="false"/>, the hamburger icon is hidden while the flyout remains functional
+		/// (e.g., it can still be opened via swipe). This is an attached property and can be set per-page.
+		/// </summary>
+		/// <remarks>
+		/// This property is currently supported on iOS and MacCatalyst only.
+		/// </remarks>
+		public static readonly BindableProperty FlyoutIconIsVisibleProperty =
+			BindableProperty.CreateAttached(nameof(GetFlyoutIconIsVisible), typeof(bool), typeof(Shell), true);
+
+		/// <summary>
+		/// Gets whether the flyout hamburger icon is visible for the given bindable object.
+		/// </summary>
+		/// <param name="obj">The bindable object (typically a <see cref="Page"/>).</param>
+		/// <returns><see langword="true"/> if the flyout icon is visible; otherwise, <see langword="false"/>.</returns>
+		public static bool GetFlyoutIconIsVisible(BindableObject obj) => (bool)obj.GetValue(FlyoutIconIsVisibleProperty);
+
+		/// <summary>
+		/// Sets whether the flyout hamburger icon is visible for the given bindable object.
+		/// </summary>
+		/// <param name="obj">The bindable object (typically a <see cref="Page"/>).</param>
+		/// <param name="isVisible"><see langword="true"/> to show the flyout icon; <see langword="false"/> to hide it.</param>
+		public static void SetFlyoutIconIsVisible(BindableObject obj, bool isVisible) => obj.SetValue(FlyoutIconIsVisibleProperty, isVisible);
+
+		/// <summary>
 		/// Modifies the behavior of the flyout scroll.
 		/// By default, a flyout can be scrolled vertically when the flyout items don't fit in the flyout. 
 		/// </summary>
@@ -1451,6 +1476,19 @@ namespace Microsoft.Maui.Controls
 		{
 			get => (ImageSource)GetValue(FlyoutIconProperty);
 			set => SetValue(FlyoutIconProperty, value);
+		}
+
+		/// <summary>
+		/// Gets or sets a value that determines whether the flyout hamburger icon is visible in the navigation bar.
+		/// When set to <see langword="false"/>, the icon is hidden but the flyout remains accessible via swipe.
+		/// </summary>
+		/// <remarks>
+		/// This property is currently supported on iOS and MacCatalyst only.
+		/// </remarks>
+		public bool FlyoutIconIsVisible
+		{
+			get => (bool)GetValue(FlyoutIconIsVisibleProperty);
+			set => SetValue(FlyoutIconIsVisibleProperty, value);
 		}
 
 		/// <summary>

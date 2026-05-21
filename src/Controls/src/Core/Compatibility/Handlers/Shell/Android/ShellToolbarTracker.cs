@@ -161,12 +161,13 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 		{
 			var backButtonHandler = Shell.GetEffectiveBackButtonBehavior(Page);
 			var isEnabled = backButtonHandler.GetPropertyIfSet(BackButtonBehavior.IsEnabledProperty, true);
+			var backButtonVisible = backButtonHandler.GetPropertyIfSet(BackButtonBehavior.IsVisibleProperty, true);
 
 			if (isEnabled)
 			{
 				if (backButtonHandler?.Command != null)
 					backButtonHandler.Command.Execute(backButtonHandler.CommandParameter);
-				else if (CanNavigateBack)
+				else if (CanNavigateBack && backButtonVisible)
 					OnNavigateBack();
 				else
 					_shell.FlyoutIsPresented = !_shell.FlyoutIsPresented;
@@ -429,6 +430,11 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			var image = _flyoutBehavior == FlyoutBehavior.Flyout ? GetFlyoutIcon(backButtonHandler, page) : backButtonHandler.GetPropertyIfSet<ImageSource>(BackButtonBehavior.IconOverrideProperty, null);
 			var backButtonVisible = _toolbar.BackButtonVisible;
 
+			// Page-level attached property takes precedence; otherwise use the Shell instance value.
+			var flyoutIconIsVisible = (page is not null && page.IsSet(Shell.FlyoutIconIsVisibleProperty))
+				? Shell.GetFlyoutIconIsVisible(page)
+				: _shell.FlyoutIconIsVisible;
+
 			DrawerArrowDrawable icon = null;
 			bool defaultDrawerArrowDrawable = false;
 
@@ -480,7 +486,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				icon = _flyoutIconDrawerDrawable;
 			}
 
-			if (icon == null && (_flyoutBehavior == FlyoutBehavior.Flyout || (CanNavigateBack && backButtonVisible)))
+			if (icon == null && ((_flyoutBehavior == FlyoutBehavior.Flyout && flyoutIconIsVisible) || (CanNavigateBack && backButtonVisible)))
 			{
 				_drawerArrowDrawable ??= new DrawerArrowDrawable(context.GetThemedContext());
 				icon = _drawerArrowDrawable;

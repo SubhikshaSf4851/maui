@@ -111,7 +111,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 #nullable restore
 			if (e.Is(VisualElement.FlowDirectionProperty))
 				UpdateFlowDirection();
-			else if (e.Is(Shell.FlyoutIconProperty) || e.Is(Shell.ForegroundColorProperty))
+			else if (e.Is(Shell.FlyoutIconProperty) || e.Is(Shell.ForegroundColorProperty) || e.Is(Shell.FlyoutIconIsVisibleProperty))
 			{
 				UpdateLeftToolbarItems();
 				UpdateRightBarButtonItemTintColors();
@@ -163,6 +163,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			{
 				UpdateLeftToolbarItems();
 				UpdateRightBarButtonItemTintColors();
+			}
+			else if (e.PropertyName == Shell.FlyoutIconIsVisibleProperty.PropertyName)
+			{
+				UpdateLeftToolbarItems();
 			}
 		}
 
@@ -522,10 +526,16 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			var command = behavior.GetPropertyIfSet<object?>(BackButtonBehavior.CommandProperty, null);
 			var backButtonVisible = behavior.GetPropertyIfSet<bool>(BackButtonBehavior.IsVisibleProperty, true);
 
+			// Determine whether the flyout hamburger icon should be visible.
+			// Page-level attached property takes precedence if explicitly set; otherwise use the Shell instance value.
+			var flyoutIconIsVisible = (Page is not null && Page.IsSet(Shell.FlyoutIconIsVisibleProperty))
+				? Shell.GetFlyoutIconIsVisible(Page)
+				: shell.FlyoutIconIsVisible;
+
 			if (String.IsNullOrWhiteSpace(text) && image == null)
 			{
-				//Add the FlyoutIcon only if the FlyoutBehavior is Flyout
-				if (_flyoutBehavior == FlyoutBehavior.Flyout)
+				//Add the FlyoutIcon only if the FlyoutBehavior is Flyout and the icon is visible
+				if (_flyoutBehavior == FlyoutBehavior.Flyout && flyoutIconIsVisible)
 				{
 					image = shell.FlyoutIcon;
 				}
@@ -534,7 +544,9 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			if (!IsRootPage)
 			{
 				NavigationItem.HidesBackButton = !backButtonVisible;
-				image = backButtonVisible ? image : null;
+				// When the back button is hidden, keep the flyout icon visible instead of nulling it out.
+				if (backButtonVisible)
+					image = null;
 			}
 
 			image.LoadImage(mauiContext, result =>
@@ -579,8 +591,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 						}
 					}
 				}
-				// Show hamburger icon if it's the root page, or if the back button is not visible.
-				else if (String.IsNullOrWhiteSpace(text) && (IsRootPage || !backButtonVisible) && _flyoutBehavior == FlyoutBehavior.Flyout)
+				// Show hamburger icon if it's the root page, or if the back button is hidden on a non-root page.
+				else if (String.IsNullOrWhiteSpace(text) && (IsRootPage || flyoutIconIsVisible) && _flyoutBehavior == FlyoutBehavior.Flyout)
 				{
 					icon = DrawHamburger();
 				}
@@ -588,8 +600,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				if (icon != null)
 				{
 					NavigationItem.LeftBarButtonItem =
-						new UIBarButtonItem(icon, UIBarButtonItemStyle.Plain, (s, e) => LeftBarButtonItemHandler(ViewController, (IsRootPage || !backButtonVisible))) { Enabled = enabled };
-						
+						new UIBarButtonItem(icon, UIBarButtonItemStyle.Plain, (s, e) => LeftBarButtonItemHandler(ViewController, IsRootPage)) { Enabled = enabled };
+
 					// For iOS 26+, explicitly set the tint color on the bar button item
 					// because the navigation bar's tint color is not automatically inherited
 					if (OperatingSystem.IsIOSVersionAtLeast(26) || OperatingSystem.IsMacCatalystVersionAtLeast(26))
@@ -610,7 +622,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				{
 					if (String.IsNullOrWhiteSpace(image?.AutomationId))
 					{
-						if (IsRootPage || !backButtonVisible)
+						if (IsRootPage)
 						{
 							NavigationItem.LeftBarButtonItem.AccessibilityIdentifier = "OK";
 							NavigationItem.LeftBarButtonItem.AccessibilityLabel = "Menu";
@@ -690,7 +702,13 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			}
 			else if (!isRootPage)
 			{
-				if (controller?.ParentViewController is ShellSectionRenderer ssr)
+				var backButtonVisible = BackButtonBehavior.GetPropertyIfSet<bool>(BackButtonBehavior.IsVisibleProperty, true);
+				if (!backButtonVisible && _flyoutBehavior == FlyoutBehavior.Flyout)
+				{
+					// Back button is hidden — icon acts as flyout hamburger, not back button.
+					_context?.Shell?.SetValueFromRenderer(Shell.FlyoutIsPresentedProperty, true);
+				}
+				else if (controller?.ParentViewController is ShellSectionRenderer ssr)
 					ssr.SendPop();
 				else if (controller?.ParentViewController is UINavigationController navigationController)
 					navigationController.PopViewController(true);

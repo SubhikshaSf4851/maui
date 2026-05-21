@@ -148,6 +148,11 @@ namespace Microsoft.Maui.Controls.Handlers
 			handler.PlatformView.UpdateFlyoutIconAsync(flyoutIcon, provider).FireAndForget();
 		}
 
+		public static void MapFlyoutIconIsVisible(ShellHandler handler, Shell view)
+		{
+			handler.PlatformView.UpdateFlyoutIconIsVisible(view.FlyoutIconIsVisible);
+		}
+
 		public static void MapFlyoutVerticalScrollMode(ShellHandler handler, Shell view)
 		{
 			handler.PlatformView.UpdateFlyoutVerticalScrollMode((WScrollMode)(int)view.FlyoutVerticalScrollMode);

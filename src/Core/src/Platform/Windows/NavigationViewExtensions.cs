@@ -255,6 +255,11 @@ namespace Microsoft.Maui.Platform
 			navigationView.UpdatePaneDisplayModeFromFlyoutBehavior(flyoutView.FlyoutBehavior);
 		}
 
+		public static void UpdateFlyoutIconIsVisible(this MauiNavigationView navigationView, bool isVisible)
+		{
+			navigationView.UpdateFlyoutIconIsVisible(isVisible);
+		}
+
 		public static void UpdateFlyoutWidth(this MauiNavigationView navigationView, IFlyoutView flyoutView)
 		{
 			if (flyoutView.FlyoutWidth >= 0)
