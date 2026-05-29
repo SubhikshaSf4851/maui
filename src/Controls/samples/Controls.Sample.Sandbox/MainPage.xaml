@@ -2,4 +2,385 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Maui.Controls.Sample.MainPage"
              xmlns:local="clr-namespace:Maui.Controls.Sample">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- ControlTemplate for RadioButton with Image -->
+            <ControlTemplate x:Key="ImageRadioButtonTemplate">
+                <Border
+                    BackgroundColor="{TemplateBinding BackgroundColor}"
+                    Stroke="Gray"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 10"
+                    Padding="10"
+                    WidthRequest="100"
+                    HeightRequest="140">
+                    <VisualStateManager.VisualStateGroups>
+                        <VisualStateGroupList>
+                            <VisualStateGroup x:Name="CheckedStates">
+                                <VisualState x:Name="Checked">
+                                    <VisualState.Setters>
+                                        <Setter Property="Stroke"
+                                                Value="#FF3300"/>
+                                        <Setter Property="StrokeThickness"
+                                                Value="3"/>
+                                        <Setter TargetName="Check"
+                                                Property="Opacity"
+                                                Value="1"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Unchecked">
+                                    <VisualState.Setters>
+                                        <Setter Property="BackgroundColor"
+                                                Value="Transparent"/>
+                                        <Setter Property="Stroke"
+                                                Value="Gray"/>
+                                        <Setter Property="StrokeThickness"
+                                                Value="2"/>
+                                        <Setter TargetName="Check"
+                                                Property="Opacity"
+                                                Value="0"/>
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateGroupList>
+                    </VisualStateManager.VisualStateGroups>
+                    <Grid>
+                        <!-- Image area -->
+                        <ContentPresenter/>
+
+                        <!-- Circle indicator in top-right corner -->
+                        <Grid HorizontalOptions="End"
+                              VerticalOptions="Start"
+                              Margin="5">
+                            <!-- Outer circle (always visible) -->
+                            <Ellipse
+                                WidthRequest="20"
+                                HeightRequest="20"
+                                Stroke="Gray"
+                                StrokeThickness="2"
+                                Fill="White"/>
+                            <!-- Inner filled dot (visible only when checked) -->
+                            <Ellipse
+                                x:Name="Check"
+                                WidthRequest="12"
+                                HeightRequest="12"
+                                Fill="Green"
+                                Opacity="0"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+
+            <!-- Style for RadioButtons -->
+            <Style x:Key="ImageRadioButtonStyle"
+                   TargetType="RadioButton">
+                <Setter Property="ControlTemplate"
+                        Value="{StaticResource ImageRadioButtonTemplate}"/>
+                <Setter Property="BackgroundColor"
+                        Value="Transparent"/>
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout
+            Spacing="20"
+            Padding="20"
+            VerticalOptions="Center"
+            HorizontalOptions="Center">
+
+            <!-- Question Label -->
+            <Label
+                Text="What is your favorite animal?"
+                FontSize="24"
+                FontAttributes="Bold"
+                HorizontalOptions="Center"
+                Margin="0,0,0,20"/>
+            <RadioButton
+                IsChecked="True"
+                Content="Normal true RadioButton"/>
+            <RadioButton
+                Content="Normal false RadioButton"/>
+            <!-- Radio Buttons Group -->
+            <HorizontalStackLayout
+                Spacing="15"
+                HorizontalOptions="Center"
+                RadioButtonGroup.GroupName="Animals"
+                RadioButtonGroup.SelectedValue="{Binding SelectedAnimal}">
+
+                <RadioButton
+                    x:Name="CatRadioButton"
+                    GroupName="Animals"
+                    Value="Cat"
+                    Style="{StaticResource ImageRadioButtonStyle}"
+                    SemanticProperties.Description="Cat">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="cat.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Cat"
+                                HorizontalOptions="Center"
+                                FontSize="14"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="DogRadioButton"
+                    GroupName="Animals"
+                    Value="Dog"
+                    Style="{StaticResource ImageRadioButtonStyle}"
+                    SemanticProperties.Description="Dog">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="dog.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Dog"
+                                HorizontalOptions="Center"
+                                FontSize="14"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="ElephantRadioButton"
+                    GroupName="Animals"
+                    Value="Elephant"
+                    Style="{StaticResource ImageRadioButtonStyle}"
+                    SemanticProperties.Description="Elephant">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="elephant.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Elephant"
+                                HorizontalOptions="Center"
+                                FontSize="14"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="MonkeyRadioButton"
+                    GroupName="Animals"
+                    Value="Monkey"
+                    Style="{StaticResource ImageRadioButtonStyle}"
+                    SemanticProperties.Description="Monkey">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="monkey.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Monkey"
+                                HorizontalOptions="Center"
+                                FontSize="14"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+            </HorizontalStackLayout>
+
+            <!-- Selection Result Label -->
+            <Label
+                x:Name="SelectionLabel"
+                Text="{Binding SelectionText}"
+                FontSize="18"
+                HorizontalOptions="Center"
+                Margin="0,20,0,0"
+                TextColor="DarkSlateGray"/>
+
+            <!-- Divider -->
+            <BoxView
+                HeightRequest="1"
+                BackgroundColor="LightGray"
+                Margin="0,30,0,20"
+                WidthRequest="400"/>
+
+            <!-- Question Label -->
+            <Label
+                Text="What is your favorite animal?"
+                FontSize="24"
+                FontAttributes="Bold"
+                HorizontalOptions="Center"
+                Margin="0,0,0,20"/>
+
+            <!-- Radio Buttons Group -->
+            <HorizontalStackLayout
+                Spacing="15"
+                HorizontalOptions="Center"
+                RadioButtonGroup.GroupName="Animals2"
+                RadioButtonGroup.SelectedValue="{Binding SelectedAnimal2}">
+
+                <RadioButton
+                    x:Name="Cat2RadioButton"
+                    GroupName="Animals2"
+                    Value="Cat"
+                    Style="{StaticResource ImageRadioButtonStyle}">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="cat.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Cat"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"
+                                FontSize="14"
+                                Margin="0,5,0,0"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="Dog2RadioButton"
+                    GroupName="Animals2"
+                    Value="Dog"
+                    Style="{StaticResource ImageRadioButtonStyle}">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="dog.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Dog"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"
+                                FontSize="14"
+                                Margin="0,5,0,0"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="Elephant2RadioButton"
+                    GroupName="Animals2"
+                    Value="Elephant"
+                    Style="{StaticResource ImageRadioButtonStyle}">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="elephant.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Elephant"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"
+                                FontSize="14"
+                                Margin="0,5,0,0"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+                <RadioButton
+                    x:Name="Monkey2RadioButton"
+                    GroupName="Animals2"
+                    Value="Monkey"
+                    Style="{StaticResource ImageRadioButtonStyle}">
+                    <RadioButton.Content>
+                        <VerticalStackLayout Spacing="5">
+                            <Image
+                                Source="monkey.png"
+                                Aspect="AspectFit"
+                                WidthRequest="80"
+                                HeightRequest="80"/>
+                            <Label
+                                Text="Monkey"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"
+                                FontSize="14"
+                                Margin="0,5,0,0"/>
+                        </VerticalStackLayout>
+                    </RadioButton.Content>
+                </RadioButton>
+
+            </HorizontalStackLayout>
+
+            <!-- Selection Result Label -->
+            <Label
+                x:Name="Selection2Label"
+                Text="{Binding Selection2Text}"
+                FontSize="18"
+                HorizontalOptions="Center"
+                Margin="0,20,0,0"
+                TextColor="DarkSlateGray"/>
+
+            <!-- Divider -->
+            <BoxView
+                HeightRequest="1"
+                BackgroundColor="LightGray"
+                Margin="0,30,0,20"
+                WidthRequest="400"/>
+
+            <!-- Question Label for Basic Radio Buttons -->
+            <Label
+                Text="What is your favorite animal? (Basic)"
+                FontSize="24"
+                FontAttributes="Bold"
+                HorizontalOptions="Center"
+                Margin="0,0,0,20"/>
+
+            <!-- Basic Radio Buttons Group -->
+            <HorizontalStackLayout
+                Spacing="10"
+                HorizontalOptions="Center"
+                RadioButtonGroup.GroupName="BasicAnimals"
+                RadioButtonGroup.SelectedValue="{Binding SelectedBasicAnimal}">
+
+                <RadioButton
+                    x:Name="BasicCatRadioButton"
+                    Content="Cat"
+                    Value="Cat"
+                    GroupName="BasicAnimals"/>
+
+                <RadioButton
+                    x:Name="BasicDogRadioButton"
+                    Content="Dog"
+                    Value="Dog"
+                    GroupName="BasicAnimals"/>
+
+                <RadioButton
+                    x:Name="BasicElephantRadioButton"
+                    Content="Elephant"
+                    Value="Elephant"
+                    GroupName="BasicAnimals"/>
+
+                <RadioButton
+                    x:Name="BasicMonkeyRadioButton"
+                    Content="Monkey"
+                    Value="Monkey"
+                    GroupName="BasicAnimals"/>
+
+            </HorizontalStackLayout>
+
+            <!-- Basic Selection Result Label -->
+            <Label
+                x:Name="BasicSelectionLabel"
+                Text="{Binding BasicSelectionText}"
+                FontSize="18"
+                HorizontalOptions="Center"
+                Margin="0,20,0,0"
+                TextColor="DarkSlateGray"/>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

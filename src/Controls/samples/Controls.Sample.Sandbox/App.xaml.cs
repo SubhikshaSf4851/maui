@@ -2,6 +2,8 @@
 
 public partial class App : Application
 {
+	public static MauiApp? MauiApp { get; set; }
+
 	public App()
 	{
 		InitializeComponent();
@@ -14,7 +16,12 @@ public partial class App : Application
 
 		if (!useShell)
 		{
-			return new Window(new NavigationPage(new MainPage()));
+			var mainPage = MauiApp?.Services.GetRequiredService<MainPage>();
+			if (mainPage != null)
+			{
+				return new Window(new NavigationPage(mainPage));
+			}
+			return new Window();
 		}
 		else
 		{
