@@ -6,3 +6,6 @@ override Microsoft.Maui.Controls.SwipeItemView.IsEnabledCore.get -> bool
 override Microsoft.Maui.Controls.TitleBar.OnBindingContextChanged() -> void
 ~override Microsoft.Maui.Controls.SwipeItems.OnPropertyChanged(string propertyName = null) -> void
 Microsoft.Maui.Controls.Label.~Label() -> void
+Microsoft.Maui.Controls.Shell.FlyoutIconIsVisible.get -> bool
+Microsoft.Maui.Controls.Shell.FlyoutIconIsVisible.set -> void
+static readonly Microsoft.Maui.Controls.Shell.FlyoutIconIsVisibleProperty -> Microsoft.Maui.Controls.BindableProperty

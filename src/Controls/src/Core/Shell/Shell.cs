@@ -1298,6 +1298,12 @@ namespace Microsoft.Maui.Controls
 			BindableProperty.Create(nameof(FlyoutIcon), typeof(ImageSource), typeof(Shell), null);
 
 		/// <summary>
+		/// Controls whether the flyout icon (hamburger icon) is visible in the navigation bar.
+		/// </summary>
+		public static readonly BindableProperty FlyoutIconIsVisibleProperty =
+			BindableProperty.Create(nameof(FlyoutIconIsVisible), typeof(bool), typeof(Shell), true);
+
+		/// <summary>
 		/// Modifies the behavior of the flyout scroll.
 		/// By default, a flyout can be scrolled vertically when the flyout items don't fit in the flyout. 
 		/// </summary>
@@ -1476,6 +1482,15 @@ namespace Microsoft.Maui.Controls
 		{
 			get => (ImageSource)GetValue(FlyoutIconProperty);
 			set => SetValue(FlyoutIconProperty, value);
+		}
+
+		/// <summary>
+		/// Gets or sets a value indicating whether the flyout icon (hamburger icon) is visible in the navigation bar.
+		/// </summary>
+		public bool FlyoutIconIsVisible
+		{
+			get => (bool)GetValue(FlyoutIconIsVisibleProperty);
+			set => SetValue(FlyoutIconIsVisibleProperty, value);
 		}
 
 		/// <summary>

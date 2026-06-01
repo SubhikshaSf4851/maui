@@ -112,7 +112,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 #nullable restore
 			if (e.Is(VisualElement.FlowDirectionProperty))
 				UpdateFlowDirection();
-			else if (e.Is(Shell.FlyoutIconProperty) || e.Is(Shell.ForegroundColorProperty))
+			else if (e.Is(Shell.FlyoutIconProperty) || e.Is(Shell.FlyoutIconIsVisibleProperty) || e.Is(Shell.ForegroundColorProperty))
 			{
 				UpdateLeftToolbarItems();
 				UpdateRightBarButtonItemTintColors();
@@ -556,8 +556,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 			if (String.IsNullOrWhiteSpace(text) && image == null)
 			{
-				//Add the FlyoutIcon only if the FlyoutBehavior is Flyout
-				if (_flyoutBehavior == FlyoutBehavior.Flyout)
+				//Add the FlyoutIcon only if the FlyoutBehavior is Flyout and the icon is visible
+				if (_flyoutBehavior == FlyoutBehavior.Flyout && shell.FlyoutIconIsVisible)
 				{
 					image = shell.FlyoutIcon;
 				}
@@ -611,7 +611,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 						}
 					}
 				}
-				else if (String.IsNullOrWhiteSpace(text) && IsRootPage && _flyoutBehavior == FlyoutBehavior.Flyout)
+				// Show hamburger icon if it's the root page.
+				else if (String.IsNullOrWhiteSpace(text) && IsRootPage && _flyoutBehavior == FlyoutBehavior.Flyout && shell.FlyoutIconIsVisible)
 				{
 					icon = DrawHamburger();
 				}

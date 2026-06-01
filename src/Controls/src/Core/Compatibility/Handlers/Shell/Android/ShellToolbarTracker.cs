@@ -304,6 +304,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			{
 				UpdateLeftBarButtonItem();
 			}
+			else if (e.Is(Shell.FlyoutIconIsVisibleProperty))
+			{
+				UpdateLeftBarButtonItem();
+			}
 			else if (e.Is(Shell.ForegroundColorProperty))
 			{
 				UpdateLeftBarButtonItem();
@@ -515,15 +519,23 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			}
 			else if (_flyoutBehavior == FlyoutBehavior.Flyout || !defaultDrawerArrowDrawable)
 			{
-				bool drawerEnabled = isEnabled && icon != null;
-				_drawerToggle.DrawerIndicatorEnabled = drawerEnabled;
-				if (drawerEnabled)
+				if (!_shell.FlyoutIconIsVisible && _flyoutBehavior == FlyoutBehavior.Flyout)
 				{
-					_drawerToggle.DrawerArrowDrawable = icon;
+					_drawerToggle.DrawerIndicatorEnabled = false;
+					toolbar.NavigationIcon = null;
 				}
 				else
 				{
-					toolbar.NavigationIcon = icon;
+					bool drawerEnabled = isEnabled && icon != null;
+					_drawerToggle.DrawerIndicatorEnabled = drawerEnabled;
+					if (drawerEnabled)
+					{
+						_drawerToggle.DrawerArrowDrawable = icon;
+					}
+					else
+					{
+						toolbar.NavigationIcon = icon;
+					}
 				}
 			}
 			else
