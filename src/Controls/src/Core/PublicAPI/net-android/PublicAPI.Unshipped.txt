@@ -26,3 +26,5 @@ override Microsoft.Maui.Controls.Handlers.Items.MauiRecyclerView<TItemsView, TAd
 ~override Microsoft.Maui.Controls.SwipeItems.OnPropertyChanged(string propertyName = null) -> void
 Microsoft.Maui.Controls.Label.~Label() -> void
 Microsoft.Maui.Controls.Shell.FlyoutIconIsVisible.get -> bool
+Microsoft.Maui.Controls.Shell.FlyoutIconIsVisible.set -> void
+static readonly Microsoft.Maui.Controls.Shell.FlyoutIconIsVisibleProperty -> Microsoft.Maui.Controls.BindableProperty
