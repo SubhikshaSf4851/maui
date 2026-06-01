@@ -11,6 +11,11 @@ namespace Microsoft.Maui.Controls
 
 		public static void MapContent(IRadioButtonHandler handler, RadioButton radioButton)
 		{
+			if (radioButton.ResolveControlTemplate() is null)
+			{
+				radioButton.ControlTemplate = DefaultTemplate;
+			}
+
 			if (radioButton.ResolveControlTemplate() != null)
 			{
 				handler.PlatformView.Style =

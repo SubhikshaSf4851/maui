@@ -1,7 +1,6 @@
 ﻿using AView = Android.Views.View;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Controls.Internals;
-using AndroidX.AppCompat.Widget;
 
 namespace Microsoft.Maui.Controls
 {
@@ -12,6 +11,11 @@ namespace Microsoft.Maui.Controls
 
 		public static void MapContent(IRadioButtonHandler handler, RadioButton radioButton)
 		{
+			if (radioButton.ResolveControlTemplate() is null)
+			{
+				radioButton.ControlTemplate = DefaultTemplate;
+			}
+
 			if (radioButton.ResolveControlTemplate() != null)
 			{
 				if (handler.PlatformView is ContentViewGroup vg && handler.MauiContext != null)
@@ -44,11 +48,9 @@ namespace Microsoft.Maui.Controls
 			if (radioButton.VirtualView is not RadioButton rb)
 				return null;
 
-			if (rb.ResolveControlTemplate() == null)
-			{
-				return null;
-			}
-
+			// Always use ContentViewGroup to host the MAUI template.
+			// MapContent will apply DefaultTemplate if none is explicitly set,
+			// mirroring the iOS behavior.
 			var viewGroup = new ContentViewGroup(radioButton.Context)
 			{
 				CrossPlatformLayout = radioButton.VirtualView
