@@ -163,6 +163,14 @@ namespace Microsoft.Maui.Controls.Handlers
 			handler.PlatformView.UpdateFlyoutVerticalScrollMode((WScrollMode)(int)view.FlyoutVerticalScrollMode);
 		}
 
+		internal static void MapFlyoutIconIsVisible(ShellHandler handler, Shell view)
+		{
+			if(view.FlyoutBehavior is FlyoutBehavior.Flyout)
+			{
+				handler.PlatformView.IsPaneToggleButtonVisible = view.FlyoutIconIsVisible;
+			}
+		}
+
 		public static void MapFlyout(ShellHandler handler, IFlyoutView flyoutView)
 		{
 			if (handler.PlatformView is RootNavigationView rnv)
@@ -210,6 +218,10 @@ namespace Microsoft.Maui.Controls.Handlers
 		public static void MapFlyoutBehavior(ShellHandler handler, IFlyoutView flyoutView)
 		{
 			handler.PlatformView.UpdateFlyoutBehavior(flyoutView);
+			if(flyoutView.FlyoutBehavior is FlyoutBehavior.Flyout && flyoutView is Shell shell)
+			{
+				handler.PlatformView.IsPaneToggleButtonVisible = shell.FlyoutIconIsVisible;
+			}
 		}
 
 		public static void MapFlyoutFooter(ShellHandler handler, Shell view)
