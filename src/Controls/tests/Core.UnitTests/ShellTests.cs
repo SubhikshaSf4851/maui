@@ -863,6 +863,59 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 
 
 		[Fact]
+		public async Task FlyoutIconIsVisibleDefaultsToTrue()
+		{
+			var shell = new Shell();
+			Assert.True(shell.FlyoutIconIsVisible);
+		}
+
+		[Fact]
+		public async Task FlyoutIconIsVisibleCanBeSetToFalse()
+		{
+			var shell = new Shell();
+			shell.FlyoutIconIsVisible = false;
+			Assert.False(shell.FlyoutIconIsVisible);
+		}
+
+		[Fact]
+		public async Task FlyoutIconIsVisibleRaisesPropertyChanged()
+		{
+			var shell = new Shell();
+			string changedProperty = null;
+			shell.PropertyChanged += (s, e) => changedProperty = e.PropertyName;
+
+			shell.FlyoutIconIsVisible = false;
+
+			Assert.Equal(nameof(Shell.FlyoutIconIsVisible), changedProperty);
+		}
+
+		[Fact]
+		public async Task FlyoutIconIsVisibleIsShellLevelNotPerPage()
+		{
+			// FlyoutIconIsVisible is on Shell, not an attached property — same value visible from any page
+			var shell = new Shell();
+			var page = new ContentPage();
+			shell.Items.Add(CreateShellItem(page: page));
+
+			shell.FlyoutIconIsVisible = false;
+
+			// Value is on Shell, not affected by which page is current
+			Assert.False(shell.FlyoutIconIsVisible);
+		}
+
+		[Fact]
+		public async Task FlyoutIconIsVisibleCanBeToggledMultipleTimes()
+		{
+			var shell = new Shell();
+			shell.FlyoutIconIsVisible = false;
+			Assert.False(shell.FlyoutIconIsVisible);
+			shell.FlyoutIconIsVisible = true;
+			Assert.True(shell.FlyoutIconIsVisible);
+			shell.FlyoutIconIsVisible = false;
+			Assert.False(shell.FlyoutIconIsVisible);
+		}
+
+		[Fact]
 		public async Task ShellFlyoutChangeableOnShellWithFlyoutItem()
 		{
 			Shell shell = new Shell();

@@ -300,11 +300,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 		void HandleShellPropertyChanged(object sender, PropertyChangedEventArgs e)
 		{
-			if (e.Is(Shell.FlyoutIconProperty))
-			{
-				UpdateLeftBarButtonItem();
-			}
-			else if (e.Is(Shell.FlyoutIconIsVisibleProperty))
+			if (e.Is(Shell.FlyoutIconProperty) || e.Is(Shell.FlyoutIconIsVisibleProperty))
 			{
 				UpdateLeftBarButtonItem();
 			}

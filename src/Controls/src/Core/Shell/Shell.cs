@@ -1300,6 +1300,20 @@ namespace Microsoft.Maui.Controls
 		/// <summary>
 		/// Controls whether the flyout icon (hamburger icon) is visible in the navigation bar.
 		/// </summary>
+		/// <remarks>
+		/// This is a shell-level property and applies globally across all pages. It cannot be set
+		/// per-page. If you want to suppress the flyout entirely on a specific page, consider using
+		/// <c>Shell.SetFlyoutBehavior(page, FlyoutBehavior.Disabled)</c> instead.
+		///
+		/// When set to <see langword="false"/>, the hamburger icon is hidden but the flyout can still
+		/// be opened programmatically via <see cref="Shell.FlyoutIsPresented"/>. Be aware that hiding
+		/// the icon reduces discoverability for users relying on assistive technologies such as screen
+		/// readers. Consider providing an alternative affordance (e.g. a <see cref="ToolbarItem"/> or
+		/// gesture) for those users.
+		///
+		/// Note: If <see cref="BackButtonBehavior.IconOverride"/> is set on a page, that custom icon
+		/// is shown regardless of this property, as it is an explicit per-page override.
+		/// </remarks>
 		public static readonly BindableProperty FlyoutIconIsVisibleProperty =
 			BindableProperty.Create(nameof(FlyoutIconIsVisible), typeof(bool), typeof(Shell), true);
 
@@ -1487,6 +1501,10 @@ namespace Microsoft.Maui.Controls
 		/// <summary>
 		/// Gets or sets a value indicating whether the flyout icon (hamburger icon) is visible in the navigation bar.
 		/// </summary>
+		/// <remarks>
+		/// This is a shell-level property — it applies to all pages. Defaults to <see langword="true"/>.
+		/// See <see cref="FlyoutIconIsVisibleProperty"/> for details on accessibility and per-page alternatives.
+		/// </remarks>
 		public bool FlyoutIconIsVisible
 		{
 			get => (bool)GetValue(FlyoutIconIsVisibleProperty);

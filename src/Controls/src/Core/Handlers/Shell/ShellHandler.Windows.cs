@@ -165,7 +165,7 @@ namespace Microsoft.Maui.Controls.Handlers
 
 		internal static void MapFlyoutIconIsVisible(ShellHandler handler, Shell view)
 		{
-			if(view.FlyoutBehavior is FlyoutBehavior.Flyout)
+			if (view.FlyoutBehavior is FlyoutBehavior.Flyout)
 			{
 				handler.PlatformView.IsPaneToggleButtonVisible = view.FlyoutIconIsVisible;
 			}
@@ -218,9 +218,15 @@ namespace Microsoft.Maui.Controls.Handlers
 		public static void MapFlyoutBehavior(ShellHandler handler, IFlyoutView flyoutView)
 		{
 			handler.PlatformView.UpdateFlyoutBehavior(flyoutView);
-			if(flyoutView.FlyoutBehavior is FlyoutBehavior.Flyout && flyoutView is Shell shell)
+			if (flyoutView.FlyoutBehavior is FlyoutBehavior.Flyout && flyoutView is Shell shell)
 			{
 				handler.PlatformView.IsPaneToggleButtonVisible = shell.FlyoutIconIsVisible;
+			}
+			else
+			{
+				// When switching away from Flyout behavior, always restore the toggle button
+				// so it isn't permanently hidden if FlyoutIconIsVisible was false.
+				handler.PlatformView.IsPaneToggleButtonVisible = true;
 			}
 		}
 
