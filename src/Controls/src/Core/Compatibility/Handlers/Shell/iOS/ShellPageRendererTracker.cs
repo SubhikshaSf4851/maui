@@ -165,6 +165,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				UpdateLeftToolbarItems();
 				UpdateRightBarButtonItemTintColors();
 			}
+			else if (e.Is(Shell.FlyoutIconIsVisibleProperty))
+			{
+				UpdateLeftToolbarItems();
+			}
 		}
 
 		protected virtual void UpdateTabBarVisible()
@@ -557,7 +561,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			if (String.IsNullOrWhiteSpace(text) && image == null)
 			{
 				//Add the FlyoutIcon only if the FlyoutBehavior is Flyout and the icon is visible
-				if (_flyoutBehavior == FlyoutBehavior.Flyout && shell.FlyoutIconIsVisible)
+				if (_flyoutBehavior == FlyoutBehavior.Flyout && GetEffectiveFlyoutIconIsVisible())
 				{
 					image = shell.FlyoutIcon;
 				}
@@ -566,7 +570,10 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			if (!IsRootPage)
 			{
 				NavigationItem.HidesBackButton = !backButtonVisible;
-				image = backButtonVisible ? image : null;
+				// When back is hidden but flyout icon is visible, keep image null so the hamburger path below can run.
+				// When back is visible, keep image (custom FlyoutIcon) or null (native back arrow).
+				if (backButtonVisible || !GetEffectiveFlyoutIconIsVisible())
+					image = backButtonVisible ? image : null;
 			}
 
 			image.LoadImage(mauiContext, result =>
@@ -611,8 +618,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 						}
 					}
 				}
-				// Show hamburger icon if it's the root page.
-				else if (String.IsNullOrWhiteSpace(text) && IsRootPage && _flyoutBehavior == FlyoutBehavior.Flyout && shell.FlyoutIconIsVisible)
+				// Show hamburger icon on root page, or on non-root page when back button is hidden and flyout icon is visible.
+				else if (String.IsNullOrWhiteSpace(text) && _flyoutBehavior == FlyoutBehavior.Flyout && GetEffectiveFlyoutIconIsVisible() && (IsRootPage || !backButtonVisible))
 				{
 					icon = DrawHamburger();
 				}
@@ -715,12 +722,13 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 			var command = behavior.GetPropertyIfSet<ICommand?>(BackButtonBehavior.CommandProperty, null);
 			var commandParameter = behavior.GetPropertyIfSet<object?>(BackButtonBehavior.CommandParameterProperty, null);
+			var backButtonVisible = behavior.GetPropertyIfSet<bool>(BackButtonBehavior.IsVisibleProperty, true);
 
 			if (command is not null)
 			{
 				command.Execute(commandParameter);
 			}
-			else if (!isRootPage)
+			else if (!isRootPage && (!GetEffectiveFlyoutIconIsVisible() || backButtonVisible))
 			{
 				if (controller?.ParentViewController is ShellSectionRenderer ssr)
 					ssr.SendPop();
@@ -780,6 +788,14 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 		void OnToolbarItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
 		{
 			UpdateToolbarItemsInternal();
+		}
+
+		bool GetEffectiveFlyoutIconIsVisible()
+		{
+			// Page-level value takes priority over shell-level value
+			if (Page != null && Page.IsSet(Shell.FlyoutIconIsVisibleProperty))
+				return Shell.GetFlyoutIconIsVisible(Page);
+			return _context?.Shell?.FlyoutIconIsVisible ?? true;
 		}
 
 		void SetBackButtonBehavior(BackButtonBehavior value)

@@ -2,4 +2,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Maui.Controls.Sample.MainPage"
              xmlns:local="clr-namespace:Maui.Controls.Sample">
+    <VerticalStackLayout>
+        <Button Clicked="OnButtonClicked"
+                Text="Change Hamburger icon visibility"/>
+        <Button Clicked="OnGoButtonClicked"
+                Text="Go to new non root page"/>
+    </VerticalStackLayout>
 </ContentPage>
