@@ -28,3 +28,5 @@ Microsoft.Maui.Controls.Label.~Label() -> void
 Microsoft.Maui.Controls.Shell.FlyoutIconIsVisible.get -> bool
 Microsoft.Maui.Controls.Shell.FlyoutIconIsVisible.set -> void
 static readonly Microsoft.Maui.Controls.Shell.FlyoutIconIsVisibleProperty -> Microsoft.Maui.Controls.BindableProperty
+static Microsoft.Maui.Controls.Shell.GetFlyoutIconIsVisible(Microsoft.Maui.Controls.BindableObject obj) -> bool
+static Microsoft.Maui.Controls.Shell.SetFlyoutIconIsVisible(Microsoft.Maui.Controls.BindableObject obj, bool value) -> void

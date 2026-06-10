@@ -401,6 +401,14 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			return image;
 		}
 
+		// Returns the effective FlyoutIconIsVisible: page-level value takes precedence over shell-level on Android.
+		bool GetEffectiveFlyoutIconIsVisible()
+		{
+			if (Page?.IsSet(Shell.FlyoutIconIsVisibleProperty) == true)
+				return Shell.GetFlyoutIconIsVisible(Page);
+			return _shell.FlyoutIconIsVisible;
+		}
+
 		protected virtual async void UpdateLeftBarButtonItem(Context context, AToolbar toolbar, DrawerLayout drawerLayout, Page page)
 		{
 			if (_drawerToggle == null)
@@ -497,16 +505,17 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 				icon = _flyoutIconDrawerDrawable;
 			}
 
-			if (icon == null && (_flyoutBehavior == FlyoutBehavior.Flyout || CanNavigateBack))
+			if (icon == null && (_flyoutBehavior == FlyoutBehavior.Flyout || (CanNavigateBack && backButtonVisible)))
 			{
 				_drawerArrowDrawable ??= new DrawerArrowDrawable(context.GetThemedContext());
 				icon = _drawerArrowDrawable;
 				defaultDrawerArrowDrawable = true;
 			}
 
-			icon?.Progress = (CanNavigateBack) ? 1 : 0;
+			int targetProgress = (CanNavigateBack && backButtonVisible) ? 1 : 0;
+			icon?.Progress = targetProgress;
 
-			if (command != null || CanNavigateBack)
+			if (command != null || (CanNavigateBack && backButtonVisible))
 			{
 				_drawerToggle.DrawerIndicatorEnabled = false;
 
@@ -515,7 +524,7 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			}
 			else if (_flyoutBehavior == FlyoutBehavior.Flyout || !defaultDrawerArrowDrawable)
 			{
-				if (!_shell.FlyoutIconIsVisible && _flyoutBehavior == FlyoutBehavior.Flyout)
+				if (!GetEffectiveFlyoutIconIsVisible() && _flyoutBehavior == FlyoutBehavior.Flyout)
 				{
 					_drawerToggle.DrawerIndicatorEnabled = false;
 					toolbar.NavigationIcon = null;
@@ -541,6 +550,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 
 			_drawerToggle.SyncState();
 
+			// SyncState can sometimes reset the icon's progress, so set it again here to ensure the correct state after navigation changes.
+			icon?.Progress = targetProgress;
 
 			//this needs to be set after SyncState
 			UpdateToolbarIconAccessibilityText(toolbar, _shell);
@@ -591,7 +602,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			else if (image == null ||
 				toolbar.SetNavigationContentDescription(image) == null)
 			{
-				if (CanNavigateBack)
+				var backButtonVisible = _toolbar.BackButtonVisible;
+				if (CanNavigateBack && backButtonVisible)
 					toolbar.SetNavigationContentDescription(Resource.String.nav_app_bar_navigate_up_description);
 				else
 					toolbar.SetNavigationContentDescription(Resource.String.nav_app_bar_open_drawer_description);

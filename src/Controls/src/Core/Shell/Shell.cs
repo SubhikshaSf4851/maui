@@ -1301,9 +1301,9 @@ namespace Microsoft.Maui.Controls
 		/// Controls whether the flyout icon (hamburger icon) is visible in the navigation bar.
 		/// </summary>
 		/// <remarks>
-		/// This is a shell-level property and applies globally across all pages. It cannot be set
-		/// per-page. If you want to suppress the flyout entirely on a specific page, consider using
-		/// <c>Shell.SetFlyoutBehavior(page, FlyoutBehavior.Disabled)</c> instead.
+		/// This property can be set at the shell level (applies to all pages) or per-page on Android
+		/// via <see cref="SetFlyoutIconIsVisible"/>. If set on a page, the page-level value takes
+		/// precedence over the shell-level value on Android.
 		///
 		/// When set to <see langword="false"/>, the hamburger icon is hidden but the flyout can still
 		/// be opened programmatically via <see cref="Shell.FlyoutIsPresented"/>. Be aware that hiding
@@ -1315,7 +1315,19 @@ namespace Microsoft.Maui.Controls
 		/// is shown regardless of this property, as it is an explicit per-page override.
 		/// </remarks>
 		public static readonly BindableProperty FlyoutIconIsVisibleProperty =
-			BindableProperty.Create(nameof(FlyoutIconIsVisible), typeof(bool), typeof(Shell), true);
+#pragma warning disable CA1507
+			BindableProperty.CreateAttached("FlyoutIconIsVisible", typeof(bool), typeof(Shell), true,
+				propertyChanged: OnFlyoutIconIsVisibleChanged);
+#pragma warning restore CA1507
+
+		static void OnFlyoutIconIsVisibleChanged(BindableObject bindable, object oldValue, object newValue)
+		{
+			Shell shell = bindable as Shell
+				?? (bindable as BaseShellItem)?.FindParentOfType<Shell>()
+				?? (bindable as Page)?.FindParentOfType<Shell>();
+
+			shell?.OnPropertyChanged(FlyoutIconIsVisibleProperty.PropertyName);
+		}
 
 		/// <summary>
 		/// Modifies the behavior of the flyout scroll.
@@ -1503,7 +1515,8 @@ namespace Microsoft.Maui.Controls
 		/// </summary>
 		/// <remarks>
 		/// This is a shell-level property — it applies to all pages. Defaults to <see langword="true"/>.
-		/// See <see cref="FlyoutIconIsVisibleProperty"/> for details on accessibility and per-page alternatives.
+		/// On Android, use <see cref="SetFlyoutIconIsVisible"/> to override per-page.
+		/// See <see cref="FlyoutIconIsVisibleProperty"/> for details on accessibility and scope.
 		/// </remarks>
 		public bool FlyoutIconIsVisible
 		{
@@ -1512,8 +1525,20 @@ namespace Microsoft.Maui.Controls
 		}
 
 		/// <summary>
-		/// The currently selected ShellItem.
+		/// Gets a value indicating whether the flyout icon is visible for the given <paramref name="obj"/>.
 		/// </summary>
+		/// <param name="obj">The page or shell element to query.</param>
+		/// <returns><see langword="true"/> if the flyout icon is visible; otherwise, <see langword="false"/>.</returns>
+		public static bool GetFlyoutIconIsVisible(BindableObject obj) => (bool)obj.GetValue(FlyoutIconIsVisibleProperty);
+
+		/// <summary>
+		/// Sets whether the flyout icon (hamburger icon) is visible when the given <paramref name="obj"/> is active.
+		/// On Android, setting this on a <see cref="Page"/> overrides the shell-level value for that page only.
+		/// </summary>
+		/// <param name="obj">The page or shell element to configure.</param>
+		/// <param name="value"><see langword="true"/> to show the icon; <see langword="false"/> to hide it.</param>
+		public static void SetFlyoutIconIsVisible(BindableObject obj, bool value) => obj.SetValue(FlyoutIconIsVisibleProperty, value);
+
 		public ShellItem CurrentItem
 		{
 			get => (ShellItem)GetValue(CurrentItemProperty);
