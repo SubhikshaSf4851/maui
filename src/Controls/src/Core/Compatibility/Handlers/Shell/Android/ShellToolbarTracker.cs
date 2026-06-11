@@ -402,12 +402,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 		}
 
 		// Returns the effective FlyoutIconIsVisible: page-level value takes precedence over shell-level on Android.
-		bool GetEffectiveFlyoutIconIsVisible()
-		{
-			if (Page?.IsSet(Shell.FlyoutIconIsVisibleProperty) == true)
-				return Shell.GetFlyoutIconIsVisible(Page);
-			return _shell.FlyoutIconIsVisible;
-		}
+		bool GetEffectiveFlyoutIconIsVisible() =>
+			Shell.GetEffectiveFlyoutIconIsVisible(_shell, Page);
 
 		protected virtual async void UpdateLeftBarButtonItem(Context context, AToolbar toolbar, DrawerLayout drawerLayout, Page page)
 		{

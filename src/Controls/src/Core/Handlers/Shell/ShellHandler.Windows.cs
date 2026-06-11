@@ -46,6 +46,7 @@ namespace Microsoft.Maui.Controls.Handlers
 			platformView.PaneOpening += OnPaneOpening;
 			platformView.PaneClosing += OnPaneClosing;
 			platformView.ItemInvoked += OnMenuItemInvoked;
+			VirtualView.Navigated += OnShellNavigated;
 		}
 
 		private void OnLoaded(object sender, UI.Xaml.RoutedEventArgs e)
@@ -58,6 +59,7 @@ namespace Microsoft.Maui.Controls.Handlers
 
 		protected override void DisconnectHandler(ShellView platformView)
 		{
+			VirtualView.Navigated -= OnShellNavigated;
 			base.DisconnectHandler(platformView);
 
 			if (platformView is MauiNavigationView mauiNavigationView)
@@ -167,7 +169,7 @@ namespace Microsoft.Maui.Controls.Handlers
 		{
 			if (view.FlyoutBehavior is FlyoutBehavior.Flyout)
 			{
-				handler.PlatformView.IsPaneToggleButtonVisible = view.FlyoutIconIsVisible;
+				handler.PlatformView.IsPaneToggleButtonVisible = handler.GetEffectiveFlyoutIconIsVisible();
 			}
 		}
 
@@ -218,9 +220,9 @@ namespace Microsoft.Maui.Controls.Handlers
 		public static void MapFlyoutBehavior(ShellHandler handler, IFlyoutView flyoutView)
 		{
 			handler.PlatformView.UpdateFlyoutBehavior(flyoutView);
-			if (flyoutView.FlyoutBehavior is FlyoutBehavior.Flyout && flyoutView is Shell shell)
+			if (flyoutView.FlyoutBehavior is FlyoutBehavior.Flyout)
 			{
-				handler.PlatformView.IsPaneToggleButtonVisible = shell.FlyoutIconIsVisible;
+				handler.PlatformView.IsPaneToggleButtonVisible = handler.GetEffectiveFlyoutIconIsVisible();
 			}
 			else
 			{
@@ -235,6 +237,17 @@ namespace Microsoft.Maui.Controls.Handlers
 			if (handler.PlatformView.PaneFooter == null)
 				handler.PlatformView.PaneFooter = new ShellFooterView(view);
 		}
+
+		void OnShellNavigated(object sender, ShellNavigatedEventArgs e)
+		{
+			// Re-evaluate per-page FlyoutIconIsVisible when the current page changes.
+			if (VirtualView?.FlyoutBehavior is FlyoutBehavior.Flyout)
+				PlatformView.IsPaneToggleButtonVisible = GetEffectiveFlyoutIconIsVisible();
+		}
+
+		// Page-level value takes priority over shell-level value on Windows.
+		bool GetEffectiveFlyoutIconIsVisible() =>
+			Shell.GetEffectiveFlyoutIconIsVisible(VirtualView, VirtualView?.CurrentPage);
 
 		public static void MapFlyoutHeader(ShellHandler handler, Shell view)
 		{

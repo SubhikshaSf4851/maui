@@ -790,13 +790,8 @@ namespace Microsoft.Maui.Controls.Platform.Compatibility
 			UpdateToolbarItemsInternal();
 		}
 
-		bool GetEffectiveFlyoutIconIsVisible()
-		{
-			// Page-level value takes priority over shell-level value
-			if (Page != null && Page.IsSet(Shell.FlyoutIconIsVisibleProperty))
-				return Shell.GetFlyoutIconIsVisible(Page);
-			return _context?.Shell?.FlyoutIconIsVisible ?? true;
-		}
+		bool GetEffectiveFlyoutIconIsVisible() =>
+			Shell.GetEffectiveFlyoutIconIsVisible(_context?.Shell, Page);
 
 		void SetBackButtonBehavior(BackButtonBehavior value)
 		{

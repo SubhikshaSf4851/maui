@@ -1515,7 +1515,7 @@ namespace Microsoft.Maui.Controls
 		/// </summary>
 		/// <remarks>
 		/// This is a shell-level property — it applies to all pages. Defaults to <see langword="true"/>.
-		/// On Android, use <see cref="SetFlyoutIconIsVisible"/> to override per-page.
+		/// On Android, iOS, MacCatalyst, and Windows, use <see cref="SetFlyoutIconIsVisible"/> to override per-page.
 		/// See <see cref="FlyoutIconIsVisibleProperty"/> for details on accessibility and scope.
 		/// </remarks>
 		public bool FlyoutIconIsVisible
@@ -1538,6 +1538,19 @@ namespace Microsoft.Maui.Controls
 		/// <param name="obj">The page or shell element to configure.</param>
 		/// <param name="value"><see langword="true"/> to show the icon; <see langword="false"/> to hide it.</param>
 		public static void SetFlyoutIconIsVisible(BindableObject obj, bool value) => obj.SetValue(FlyoutIconIsVisibleProperty, value);
+
+		/// <summary>Returns the effective flyout-icon visibility for the given page.</summary>
+		/// <remarks>
+		/// Page-level value (set via <see cref="SetFlyoutIconIsVisible"/>) takes priority over
+		/// the shell-level <see cref="FlyoutIconIsVisible"/> value. Used by platform handlers to
+		/// avoid duplicating this precedence logic on each platform.
+		/// </remarks>
+		internal static bool GetEffectiveFlyoutIconIsVisible(Shell shell, Page currentPage)
+		{
+			if (currentPage?.IsSet(FlyoutIconIsVisibleProperty) == true)
+				return GetFlyoutIconIsVisible(currentPage);
+			return shell?.FlyoutIconIsVisible ?? true;
+		}
 
 		public ShellItem CurrentItem
 		{
