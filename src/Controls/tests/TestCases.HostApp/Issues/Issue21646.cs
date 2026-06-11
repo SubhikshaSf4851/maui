@@ -1,6 +1,6 @@
 namespace Maui.Controls.Sample.Issues;
 
-[Issue(IssueTracker.Github, 21646, "FlyoutIconIsVisible: hamburger icon should be controllable per-page on Android", PlatformAffected.Android)]
+[Issue(IssueTracker.Github, 21646, "FlyoutIconIsVisible: hamburger icon should be controllable per-page", PlatformAffected.All)]
 public class Issue21646 : TestShell
 {
 	protected override void Init()

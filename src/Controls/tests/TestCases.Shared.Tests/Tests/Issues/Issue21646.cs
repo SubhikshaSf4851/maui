@@ -8,7 +8,7 @@ public class Issue21646 : _IssuesUITest
 {
 	public Issue21646(TestDevice device) : base(device) { }
 
-	public override string Issue => "FlyoutIconIsVisible: hamburger icon should be controllable per-page on Android";
+	public override string Issue => "FlyoutIconIsVisible: hamburger icon should be controllable per-page";
 
 	// On root page, hamburger is visible by default
 	[Test, Order(1)]

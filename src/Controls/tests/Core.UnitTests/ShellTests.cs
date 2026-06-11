@@ -863,14 +863,14 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 
 
 		[Fact]
-		public async Task FlyoutIconIsVisibleDefaultsToTrue()
+		public void FlyoutIconIsVisibleDefaultsToTrue()
 		{
 			var shell = new Shell();
 			Assert.True(shell.FlyoutIconIsVisible);
 		}
 
 		[Fact]
-		public async Task FlyoutIconIsVisibleCanBeSetToFalse()
+		public void FlyoutIconIsVisibleCanBeSetToFalse()
 		{
 			var shell = new Shell();
 			shell.FlyoutIconIsVisible = false;
@@ -878,7 +878,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 		}
 
 		[Fact]
-		public async Task FlyoutIconIsVisibleRaisesPropertyChanged()
+		public void FlyoutIconIsVisibleRaisesPropertyChanged()
 		{
 			var shell = new Shell();
 			string changedProperty = null;
@@ -890,7 +890,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 		}
 
 		[Fact]
-		public async Task FlyoutIconIsVisibleIsShellLevelNotPerPage()
+		public void FlyoutIconIsVisibleIsShellLevelNotPerPage()
 		{
 			// FlyoutIconIsVisible is on Shell, not an attached property — same value visible from any page
 			var shell = new Shell();
@@ -904,7 +904,7 @@ namespace Microsoft.Maui.Controls.Core.UnitTests
 		}
 
 		[Fact]
-		public async Task FlyoutIconIsVisibleCanBeToggledMultipleTimes()
+		public void FlyoutIconIsVisibleCanBeToggledMultipleTimes()
 		{
 			var shell = new Shell();
 			shell.FlyoutIconIsVisible = false;
