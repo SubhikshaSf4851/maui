@@ -531,92 +531,6 @@ if (-not (Test-Path $detectScriptPath)) {
     # Empty shipped set: every preview is in-flight.
     Assert-Eq -Label "no shipped previews: preview1 in-flight"  -Expected $true -Actual (Test-IsPreviewBranchInFlight -PreviewNumber 1 -ShippedPreviews $emptyPreviewSet)
     Assert-Eq -Label "no shipped previews: preview20 in-flight" -Expected $true -Actual (Test-IsPreviewBranchInFlight -PreviewNumber 20 -ShippedPreviews $emptyPreviewSet)
-
-    # ─────────── Get-RecentCommitCount: deterministic recency-window coverage ───────────
-    # The detector derives every tracker's `hasRecentActivity` from
-    # Get-RecentCommitCount (git log <ref> --since=<Days>.days). The live E2E
-    # assertions deliberately DON'T pin that flag's value — it's wall-clock
-    # dependent: a servicing branch idle for >Days flips it to $false, which is a
-    # NORMAL end-of-cycle state, not a bug. Prove the window math itself is correct
-    # HERE instead, against a throwaway repo whose commits have controlled dates.
-    # This is fully deterministic: zero network, zero dependence on "today".
-    Write-Host "`n[Unit] Get-RecentCommitCount recency window (synthetic fixture)" -ForegroundColor Cyan
-    $savedRepo   = $Repo
-    $fixtureRepo = Join-Path ([System.IO.Path]::GetTempPath()) "rr-recency-fixture-$([guid]::NewGuid().ToString('N'))"
-    try {
-        New-Item -ItemType Directory -Path $fixtureRepo -Force | Out-Null
-        git -C $fixtureRepo init -q             2>&1 | Out-Null
-        git -C $fixtureRepo config user.email 'rr-test@example.com' 2>&1 | Out-Null
-        git -C $fixtureRepo config user.name  'RR Test'            2>&1 | Out-Null
-        # Keep the fixture hermetic against the host's git config — otherwise a
-        # developer/CI machine could break the synthetic commits in ways unrelated
-        # to the code under test:
-        #   - commit.gpgsign=true with no key for this throwaway repo -> "gpg failed
-        #     to sign the data" -> zero commits.
-        #   - a global core.hooksPath, or an init.templateDir that seeds .git/hooks,
-        #     installing a pre-commit/commit-msg hook (linters, ticket-number
-        #     enforcement, etc.) -> commits rejected.
-        # Force signing off and redirect hook lookup to an empty (nonexistent) path
-        # under .git so neither can interfere. A local core.hooksPath overrides any
-        # global one AND bypasses templated .git/hooks. The setup guard below still
-        # fails loud if anything else goes wrong.
-        git -C $fixtureRepo config commit.gpgsign false 2>&1 | Out-Null
-        git -C $fixtureRepo config core.hooksPath (Join-Path (Join-Path $fixtureRepo '.git') '_disabled-hooks') 2>&1 | Out-Null
-
-        # Three commits at known ages relative to "now". The 1-day margins on either
-        # side of the 7-day window keep every assertion robust (no boundary fuzz).
-        $now = Get-Date
-        # Preserve any ambient GIT_*_DATE the caller set: we override them per commit
-        # to control dates, then restore the originals so a later test in this process
-        # (or the parent environment) is never left mutated.
-        $priorAuthorDate    = $env:GIT_AUTHOR_DATE
-        $priorCommitterDate = $env:GIT_COMMITTER_DATE
-        try {
-            foreach ($c in @(
-                @{ Msg = 'c30'; Age = 30 }   # well outside any window under test
-                @{ Msg = 'c8';  Age = 8  }   # just OUTSIDE the 7-day window
-                @{ Msg = 'c6';  Age = 6  }   # just INSIDE the 7-day window
-            )) {
-                $iso = $now.AddDays(-$c.Age).ToString('yyyy-MM-ddTHH:mm:ss')
-                Set-Content -Path (Join-Path $fixtureRepo "$($c.Msg).txt") -Value $c.Msg
-                git -C $fixtureRepo add -A 2>&1 | Out-Null
-                $env:GIT_AUTHOR_DATE    = $iso
-                $env:GIT_COMMITTER_DATE = $iso   # --since filters on committer date
-                git -C $fixtureRepo commit -q -m $c.Msg 2>&1 | Out-Null
-            }
-        } finally {
-            if ($null -eq $priorAuthorDate)    { Remove-Item Env:GIT_AUTHOR_DATE    -ErrorAction SilentlyContinue } else { $env:GIT_AUTHOR_DATE    = $priorAuthorDate }
-            if ($null -eq $priorCommitterDate) { Remove-Item Env:GIT_COMMITTER_DATE -ErrorAction SilentlyContinue } else { $env:GIT_COMMITTER_DATE = $priorCommitterDate }
-        }
-        # Get-RecentCommitCount resolves `origin/<ref>`, so publish a remote-tracking
-        # ref. Targeting HEAD keeps this branch-name agnostic (works whether git
-        # defaults the initial branch to 'main' or 'master').
-        git -C $fixtureRepo update-ref refs/remotes/origin/main HEAD 2>&1 | Out-Null
-
-        # Fail LOUDLY (and early) if the fixture didn't end up with the 3 commits the
-        # assertions below depend on — e.g. a machine-level git misconfig swallowed
-        # by `2>&1 | Out-Null`. Without this guard a broken setup surfaces only as a
-        # cryptic "unknown revision origin/main" from Get-RecentCommitCount later.
-        $fixtureCommitCount = (& git -C $fixtureRepo rev-list --count origin/main 2>$null)
-        if ($LASTEXITCODE -ne 0 -or "$fixtureCommitCount".Trim() -ne '3') {
-            throw "Recency fixture setup failed: expected 3 commits on 'origin/main', got '$fixtureCommitCount' (git exit $LASTEXITCODE). Check this machine's git config (e.g. commit.gpgsign / hooks)."
-        }
-
-        # Point the dot-sourced detector helper at the fixture for these assertions,
-        # then restore $Repo in `finally` so later tests are untouched.
-        $Repo = $fixtureRepo
-        Assert-Eq -Label "recency window: 7d counts only the 6-day-old commit"        -Expected 1 -Actual (Get-RecentCommitCount -Ref 'main' -Days 7)
-        Assert-Eq -Label "recency window: 10d also includes the 8-day-old commit"     -Expected 2 -Actual (Get-RecentCommitCount -Ref 'main' -Days 10)
-        Assert-Eq -Label "recency window: 60d includes all three commits"             -Expected 3 -Actual (Get-RecentCommitCount -Ref 'main' -Days 60)
-        Assert-Eq -Label "recency window: 1d window -> 0 (the idle / no-activity case)" -Expected 0 -Actual (Get-RecentCommitCount -Ref 'main' -Days 1)
-        # The `origin/`-prefixed ref form must resolve identically (no double prefix).
-        Assert-Eq -Label "recency window: explicit origin/ ref resolves the same"     -Expected 1 -Actual (Get-RecentCommitCount -Ref 'origin/main' -Days 7)
-    } finally {
-        $Repo = $savedRepo
-        # SilentlyContinue so a cleanup hiccup (e.g. a transient file lock on .git)
-        # can't throw from `finally` and mask a real failure from the `try` body.
-        if (Test-Path $fixtureRepo) { Remove-Item -Recurse -Force $fixtureRepo -ErrorAction SilentlyContinue }
-    }
 }
 
 # ─────────── E2E: Run detection against this repo and validate trackers ───────────
@@ -678,15 +592,7 @@ if (-not $SkipE2E) {
                 Assert-Eq -Label "SR8 branchName"               -Expected 'release/10.0.1xx-sr8' -Actual $sr8.branchName
                 Assert-Eq -Label "SR8 branchExists = true"      -Expected $true -Actual $sr8.branchExists
                 Assert-Eq -Label "SR8 expectedTag = 10.0.80"    -Expected '10.0.80' -Actual $sr8.expectedTag
-                # hasRecentActivity is a 7-day-window signal (git log --since=7.days
-                # against the live branch), so its VALUE is wall-clock dependent and
-                # MUST NOT be pinned here — SR8 idling >7 days at the tail of a cycle
-                # is a NORMAL state that would (correctly) report $false. Assert only
-                # that the detector emits it as a real [bool]. The window math itself
-                # is covered deterministically by the synthetic-fixture unit test
-                # ([Unit] Get-RecentCommitCount recency window).
-                Assert-Eq -Label "SR8 hasRecentActivity is a [bool] (value is date-dependent)" `
-                          -Expected $true -Actual ($sr8.hasRecentActivity -is [bool])
+                Assert-Eq -Label "SR8 hasRecentActivity = true" -Expected $true -Actual $sr8.hasRecentActivity
                 Assert-Eq -Label "SR8 regression labels"        `
                           -Expected 'regressed-in-10.0.70,regressed-in-10.0.80' `
                           -Actual ($sr8.regressionLabels -join ',')
@@ -707,9 +613,7 @@ if (-not $SkipE2E) {
                 Assert-Eq -Label "SR9 priorSrBranch = SR8 branch" `
                           -Expected 'release/10.0.1xx-sr8' -Actual $sr9.priorSrBranch
                 Assert-Eq -Label "SR9 expectedPatch = 90"       -Expected 90 -Actual $sr9.expectedPatch
-                # Same 7-day-window caveat as SR8: don't pin the value, assert the type.
-                Assert-Eq -Label "SR9 hasRecentActivity is a [bool] (value is date-dependent)" `
-                          -Expected $true -Actual ($sr9.hasRecentActivity -is [bool])
+                Assert-Eq -Label "SR9 hasRecentActivity = true" -Expected $true -Actual $sr9.hasRecentActivity
                 Assert-Eq -Label "SR9 regression labels"        `
                           -Expected 'regressed-in-10.0.80,regressed-in-10.0.90' `
                           -Actual ($sr9.regressionLabels -join ',')
@@ -717,23 +621,12 @@ if (-not $SkipE2E) {
                 Write-Host "  ❌ SR9 tracker missing" -ForegroundColor Red; $script:failed++
             }
 
-            # Every active SR tracker must EXPOSE a hasRecentActivity flag, but that
-            # flag is a 7-day-window signal (git log --since=7.days), NOT a synonym
-            # for "active": an active SR can legitimately sit idle for >7 days near
-            # the tail of a cycle and report hasRecentActivity=$false. So assert the
-            # flag is a real [bool] — never a hardcoded, date-dependent $true. SR7
-            # shipped 2026-06-05 and is no longer in the tracker set; only SR8 + SR9
-            # are active.
+            # Active SRs (the ones the workflow will actually post) all have activity.
+            # SR7 shipped 2026-06-05 (no longer in the tracker set); only SR8 + SR9 are active.
             foreach ($srNum in @(8, 9)) {
                 if ($bySr.ContainsKey($srNum)) {
-                    Assert-Eq -Label "SR$srNum hasRecentActivity is a [bool] (active SR; value date-dependent)" `
-                              -Expected $true -Actual ($bySr[$srNum].hasRecentActivity -is [bool])
-                    # Pin the detector's count->flag WIRING (hasRecentActivity = recentCommitCount > 0)
-                    # without pinning the date-dependent value: both fields come off the SAME tracker
-                    # computed at the SAME instant, so this invariant holds no matter how active the
-                    # branch is, yet still catches an inverted/hardcoded mapping.
-                    Assert-Eq -Label "SR$srNum hasRecentActivity == (recentCommitCount > 0) [mapping invariant]" `
-                              -Expected $true -Actual ($bySr[$srNum].hasRecentActivity -eq ([int]$bySr[$srNum].recentCommitCount -gt 0))
+                    Assert-Eq -Label "SR$srNum hasRecentActivity == true (active SR)" `
+                              -Expected $true -Actual $bySr[$srNum].hasRecentActivity
                 }
             }
         }
@@ -813,16 +706,8 @@ if (-not $SkipE2E) {
                           -Expected 'release/11.0.1xx-preview6' -Actual $preview6.branchName
                 Assert-Eq -Label "preview6 branchExists = false (no branch yet)" `
                           -Expected $false -Actual $preview6.branchExists
-                # hasRecentActivity is a 7-day-window signal, not a marker of an
-                # "active preview cycle" — net11.0 can idle >7 days and report $false.
-                # Assert the flag's TYPE, not its date-dependent value.
-                Assert-Eq -Label "preview6 hasRecentActivity is a [bool] (value date-dependent)" `
-                          -Expected $true -Actual ($preview6.hasRecentActivity -is [bool])
-                # Pin the count->flag WIRING (hasRecentActivity = recentCommitCount > 0) for the
-                # preview construction path too — same-instant fields, so date-independent yet it
-                # still trips on an inverted/hardcoded mapping.
-                Assert-Eq -Label "preview6 hasRecentActivity == (recentCommitCount > 0) [mapping invariant]" `
-                          -Expected $true -Actual ($preview6.hasRecentActivity -eq ([int]$preview6.recentCommitCount -gt 0))
+                Assert-Eq -Label "preview6 hasRecentActivity = true (active preview cycle)" `
+                          -Expected $true -Actual $preview6.hasRecentActivity
                 Assert-Eq -Label "preview6 regressionLabels carries previewN-1 + previewN" `
                           -Expected 'regressed-in-11.0.0-preview5,regressed-in-11.0.0-preview6' `
                           -Actual ($preview6.regressionLabels -join ',')
@@ -863,206 +748,6 @@ try {
 } finally {
     Remove-Item -Path Env:GET_RELEASE_READINESS_TEST_MODE -ErrorAction SilentlyContinue
 }
-
-# ───── gh-stubbed regression tests (cross-repo filter + author gate) ─────
-# These exercise functions that call `Invoke-Gh`. We shadow Invoke-Gh with a
-# per-test dispatcher ($script:GhStub) so the assertions are deterministic and
-# offline, then restore the real function so the E2E section is unaffected.
-$script:GhStub = $null
-$script:OrigInvokeGh = ${function:Invoke-Gh}
-function Invoke-Gh { param([string[]]$GhArgs, [switch]$Quiet) & $script:GhStub $GhArgs }
-try {
-    # ── Get-IssueTimelinePrs: only same-repo cross-references are fix candidates ──
-    # Regression: timeline `cross-referenced` events can point at PRs in OTHER
-    # repos (forks like praveenkumarkarunanithi/maui#24, unrelated projects like
-    # zhollis21/AniSprinkles#102). Those numbers, looked up against dotnet/maui,
-    # either 404 (low numbers → warning embedded in the tracker issue) or silently
-    # match an unrelated same-numbered PR. The repo filter must drop them.
-    Write-Host "`n[Unit] Get-IssueTimelinePrs (cross-repo cross-reference filter)" -ForegroundColor Cyan
-    $script:GhStub = {
-        param([string[]]$GhArgs)
-        @'
-[
-  { "event": "cross-referenced", "source": { "type": "issue", "issue": {
-      "number": 35625, "pull_request": {"url":"x"}, "repository": { "full_name": "dotnet/maui" } } } },
-  { "event": "cross-referenced", "source": { "type": "issue", "issue": {
-      "number": 102, "pull_request": {"url":"x"}, "repository": { "full_name": "zhollis21/AniSprinkles" } } } },
-  { "event": "cross-referenced", "source": { "type": "issue", "issue": {
-      "number": 24, "pull_request": {"url":"x"}, "repository": { "full_name": "praveenkumarkarunanithi/maui" } } } },
-  { "event": "cross-referenced", "source": { "type": "issue", "issue": {
-      "number": 35962, "pull_request": {"url":"x"}, "repository": { "full_name": "dotnet/maui" } } } },
-  { "event": "cross-referenced", "source": { "type": "issue", "issue": {
-      "number": 999, "repository": { "full_name": "dotnet/maui" } } } },
-  { "event": "labeled" }
-]
-'@
-    }
-    $timelinePrs = Get-IssueTimelinePrs -Repo 'dotnet/maui' -IssueNumber 12345
-    Assert-Eq -Label "timeline keeps only same-repo PRs; drops foreign #24/#102 and non-PR #999" `
-        -Expected '35625,35962' -Actual (($timelinePrs | Sort-Object) -join ',')
-
-    # A timeline with ONLY foreign cross-refs must yield zero candidates (no
-    # `gh pr view <foreign#>` against dotnet/maui → no 404 warning in the tracker).
-    $script:GhStub = {
-        param([string[]]$GhArgs)
-        @'
-[
-  { "event": "cross-referenced", "source": { "type": "issue", "issue": {
-      "number": 24, "pull_request": {"url":"x"}, "repository": { "full_name": "praveenkumarkarunanithi/maui" } } } },
-  { "event": "cross-referenced", "source": { "type": "issue", "issue": {
-      "number": 877, "pull_request": {"url":"x"}, "repository": { "full_name": "DIPSAS/DIPS.Mobile.UI" } } } }
-]
-'@
-    }
-    $foreignOnly = @(Get-IssueTimelinePrs -Repo 'dotnet/maui' -IssueNumber 12345)
-    Assert-Eq -Label "timeline with only foreign cross-refs yields 0 candidates" `
-        -Expected 0 -Actual $foreignOnly.Count
-
-    # ── Get-CandidatePrChecks: maintainer author-gate via REST author_association ──
-    # Regression: `gh pr list --json` does not support authorAssociation, so the
-    # spoof-gate now fetches author_association per title-matched candidate from
-    # the REST API. Verify (a) a MEMBER-authored "Candidate" PR is accepted and a
-    # CONTRIBUTOR-authored one is excluded, and (b) when ALL title matches are
-    # non-maintainers the gate reports them as excluded spoofers.
-    Write-Host "`n[Unit] Get-CandidatePrChecks (REST author-association spoof gate)" -ForegroundColor Cyan
-    $candCtx = @{ mode = 'candidate'; repo = 'dotnet/maui'; mainBranch = 'main'; priorSrBranch = 'release/10.0.1xx-sr8' }
-
-    # (a) member candidate present alongside a contributor spoof + a non-match.
-    $script:GhStub = {
-        param([string[]]$GhArgs)
-        if ($GhArgs[0] -eq 'pr' -and $GhArgs[1] -eq 'list') {
-            return @'
-[
-  {"number":777,"title":"June 8th, Candidate","author":{"login":"rmarinho"},"updatedAt":"2026-06-18T00:00:00Z","url":"u"},
-  {"number":888,"title":"Candidate build for testing","author":{"login":"rando"},"updatedAt":"2026-06-18T00:00:00Z","url":"u"},
-  {"number":999,"title":"Fix button layout","author":{"login":"x"},"updatedAt":"2026-06-18T00:00:00Z","url":"u"}
-]
-'@
-        }
-        if ($GhArgs[0] -eq 'api' -and ($GhArgs -contains '.author_association')) {
-            if ($GhArgs[1] -match '/pulls/777$') { return 'MEMBER' }
-            if ($GhArgs[1] -match '/pulls/888$') { return 'CONTRIBUTOR' }
-            return 'NONE'
-        }
-        return $null
-    }
-    $candChecks = @(Get-CandidatePrChecks -Ctx $candCtx)
-    Assert-Eq -Label "candidate gate returns exactly one check" -Expected 1 -Actual $candChecks.Count
-    Assert-Eq -Label "member-authored Candidate PR accepted (WATCH)" -Expected 'WATCH' -Actual $candChecks[0].Status
-    Assert-Eq -Label "accepted check names the member PR #777" -Expected $true `
-        -Actual ([bool]($candChecks[0].Details -match '#777'))
-    Assert-Eq -Label "contributor spoof #888 excluded from accepted check" -Expected $true `
-        -Actual ([bool]($candChecks[0].Details -notmatch '#888'))
-
-    # (b) only a contributor-authored "Candidate" PR exists → gate rejects it and
-    # reports the exclusion count (no candidate accepted).
-    $script:GhStub = {
-        param([string[]]$GhArgs)
-        if ($GhArgs[0] -eq 'pr' -and $GhArgs[1] -eq 'list') {
-            return @'
-[ {"number":888,"title":"Candidate build for testing","author":{"login":"rando"},"updatedAt":"2026-06-18T00:00:00Z","url":"u"} ]
-'@
-        }
-        if ($GhArgs[0] -eq 'api' -and ($GhArgs -contains '.author_association')) {
-            return 'CONTRIBUTOR'
-        }
-        return $null
-    }
-    $spoofChecks = @(Get-CandidatePrChecks -Ctx $candCtx)
-    Assert-Eq -Label "spoof-only gate still returns one (WATCH) check" -Expected 'WATCH' -Actual $spoofChecks[0].Status
-    Assert-Eq -Label "spoof-only gate reports the excluded non-maintainer PR" -Expected $true `
-        -Actual ([bool]($spoofChecks[0].Details -match 'non-maintainer'))
-    Assert-Eq -Label "confirmed spoofer is NOT reported as could-not-verify" -Expected $true `
-        -Actual ([bool]($spoofChecks[0].Details -notmatch 'could not have their author association verified'))
-
-    # (c) a maintainer-titled Candidate PR whose author-association REST lookup
-    # fails transiently (Invoke-Gh returns $null on non-zero gh exit). It must be
-    # excluded fail-closed, but reported as UNVERIFIABLE — NOT mislabeled as a
-    # confirmed non-maintainer spoofer. A transient blip during a real cut must
-    # not tell the release captain their own legitimate PR isn't from a
-    # maintainer. (The dedicated Invoke-Gh -Quiet test further below proves the
-    # transient lookup failure stays out of the tracker body; this case shadows
-    # Invoke-Gh and so asserts the *classification*, not the suppression.)
-    $script:GhStub = {
-        param([string[]]$GhArgs)
-        if ($GhArgs[0] -eq 'pr' -and $GhArgs[1] -eq 'list') {
-            return @'
-[ {"number":777,"title":"June 8th, Candidate","author":{"login":"rmarinho"},"updatedAt":"2026-06-18T00:00:00Z","url":"u"} ]
-'@
-        }
-        # author_association lookup fails → mirror Invoke-Gh's $null-on-failure.
-        return $null
-    }
-    $unverChecks = @(Get-CandidatePrChecks -Ctx $candCtx)
-    Assert-Eq -Label "unverifiable author-assoc gate still returns one (WATCH) check" -Expected 'WATCH' -Actual $unverChecks[0].Status
-    Assert-Eq -Label "unverifiable Candidate PR reported as could-not-verify" -Expected $true `
-        -Actual ([bool]($unverChecks[0].Details -match 'could not have their author association verified'))
-    Assert-Eq -Label "unverifiable Candidate PR NOT mislabeled as non-maintainer spoofer" -Expected $true `
-        -Actual ([bool]($unverChecks[0].Details -notmatch 'non-maintainer'))
-    Assert-Eq -Label "unverifiable gate NextAction tells captain to rerun" -Expected $true `
-        -Actual ([bool]($unverChecks[0].NextAction -match 'rerun'))
-
-    # (d) a maintainer Candidate PR (#777, MEMBER) co-exists with a SECOND
-    # title-matched PR (#888) whose author-association lookup fails transiently.
-    # The valid candidate is accepted, but the accepted check must still SURFACE
-    # the co-existing unverifiable sibling instead of silently dropping it.
-    $script:GhStub = {
-        param([string[]]$GhArgs)
-        if ($GhArgs[0] -eq 'pr' -and $GhArgs[1] -eq 'list') {
-            return @'
-[
-  {"number":777,"title":"June 8th, Candidate","author":{"login":"rmarinho"},"updatedAt":"2026-06-18T00:00:00Z","url":"u"},
-  {"number":888,"title":"Candidate build for testing","author":{"login":"rando"},"updatedAt":"2026-06-18T00:00:00Z","url":"u"}
-]
-'@
-        }
-        if ($GhArgs[0] -eq 'api' -and ($GhArgs -contains '.author_association')) {
-            if ($GhArgs[1] -match '/pulls/777$') { return 'MEMBER' }
-            return $null  # #888 lookup fails → unverifiable
-        }
-        return $null
-    }
-    $mixedChecks = @(Get-CandidatePrChecks -Ctx $candCtx)
-    Assert-Eq -Label "mixed accept+unverifiable still returns one (WATCH) check" -Expected 'WATCH' -Actual $mixedChecks[0].Status
-    Assert-Eq -Label "mixed: accepted check names the member PR #777" -Expected $true `
-        -Actual ([bool]($mixedChecks[0].Details -match '#777'))
-    Assert-Eq -Label "mixed: accepted check surfaces the co-existing unverifiable sibling" -Expected $true `
-        -Actual ([bool]($mixedChecks[0].Details -match 'unverifiable'))
-    Assert-Eq -Label "mixed: NextAction tells captain to rerun for the unverifiable sibling" -Expected $true `
-        -Actual ([bool]($mixedChecks[0].NextAction -match 'rerun'))
-} finally {
-    ${function:Invoke-Gh} = $script:OrigInvokeGh
-    $script:GhStub = $null
-}
-
-# ───── Invoke-Gh -Quiet (warning-suppression contract) ─────
-# Get-CandidatePrChecks fetches author_association with `Invoke-Gh ... -Quiet`
-# specifically so a transient REST failure does NOT leak a raw `gh ... exited`
-# line into $Script:Warnings (which is rendered into the tracker issue body).
-# The classification tests above shadow Invoke-Gh, so they cannot observe this.
-# Here we exercise the REAL Invoke-Gh against a simulated failing `gh` (a stub
-# function that just sets a non-zero $LASTEXITCODE — no Write-Error, which would
-# throw under $ErrorActionPreference='Stop') to prove the contract directly.
-Write-Host "`n[Unit] Invoke-Gh -Quiet (warning suppression)" -ForegroundColor Cyan
-$loudResult = $null; $loudWarnings = -1
-$quietResult = 'sentinel'; $quietWarnings = -1
-function gh { $global:LASTEXITCODE = 7 }
-try {
-    $Script:Warnings.Clear()
-    $loudResult = Invoke-Gh @('api', 'repos/dotnet/maui/pulls/1')
-    $loudWarnings = $Script:Warnings.Count
-
-    $Script:Warnings.Clear()
-    $quietResult = Invoke-Gh @('api', 'repos/dotnet/maui/pulls/1') -Quiet
-    $quietWarnings = $Script:Warnings.Count
-} finally {
-    Remove-Item Function:gh -ErrorAction SilentlyContinue
-    $Script:Warnings.Clear()
-}
-Assert-Eq -Label 'Invoke-Gh returns $null on non-zero gh exit (no -Quiet)' -Expected $true -Actual ($null -eq $loudResult)
-Assert-Eq -Label 'Invoke-Gh without -Quiet records a warning on failure' -Expected $true -Actual ($loudWarnings -ge 1)
-Assert-Eq -Label 'Invoke-Gh -Quiet returns $null on non-zero gh exit' -Expected $true -Actual ($null -eq $quietResult)
-Assert-Eq -Label 'Invoke-Gh -Quiet records NO warning on failure' -Expected 0 -Actual $quietWarnings
 
 # ───── Get-RevertedPrFromSubject (revert false-green guard) ─────
 Write-Host "`n[Unit] Get-RevertedPrFromSubject (revert classification)" -ForegroundColor Cyan
@@ -2966,73 +2651,6 @@ Assert-Eq -Label "T18: no MainBumpDate → fallback (current-month anchor)" -Exp
 $t19 = Get-ExpectedShipDate -ReferenceDate ([DateTime]'2026-06-11') -PatchVersion 81 -MainBumpDate ([DateTime]'2026-05-13')
 Assert-Eq -Label "T19: patch=81 + MainBumpDate → asap-hotfix"     -Expected 'asap-hotfix'     -Actual $t19.Cadence
 Assert-Eq -Label "T19: missedWindow = false for hotfix"           -Expected $false            -Actual $t19.MissedWindow
-
-# =========================================================================
-# SR lane — Test-IsP0Pr + Get-P0PrChecks (p/0 PR blocker parity)
-# =========================================================================
-# Regression guard for the gap where p/0-labelled PRs targeting an SR branch
-# were NOT surfaced as blockers (the SR lane derived blocking only from
-# ship-checks and Tier-1 regression ISSUES; open PRs were informational).
-# These deterministic, synthetic-fixture tests exercise the SR script's OWN
-# Test-IsP0Pr + Get-P0PrChecks. Re-dot-source the SR engine so the functions
-# under test are unambiguously the SR-lane copies regardless of any prior
-# preview dot-source.
-Write-Host "`n[Unit] SR lane — Test-IsP0Pr + Get-P0PrChecks (p/0 PR parity)" -ForegroundColor Cyan
-
-$env:GET_RELEASE_READINESS_TEST_MODE = '1'
-try {
-    $srScriptForP0 = Join-Path $PSScriptRoot '..' 'scripts' 'Get-ReleaseReadiness.ps1'
-    . $srScriptForP0 -SrBranch 'release/10.0.1xx-sr8'
-} finally {
-    Remove-Item -Path Env:GET_RELEASE_READINESS_TEST_MODE -ErrorAction SilentlyContinue
-}
-
-# --- Test-IsP0Pr: PSCustomObject (production gh --json) shape ---
-$srP0Pr        = [PSCustomObject]@{ number = 35970; labels = @([PSCustomObject]@{ name = 'p/0' }, [PSCustomObject]@{ name = 'area-controls' }) }
-$srNonP0Pr     = [PSCustomObject]@{ number = 99999; labels = @([PSCustomObject]@{ name = 'p/1' }) }
-$srMissingLbls = [PSCustomObject]@{ number = 12345 }                 # no labels property
-$srNullLbls    = [PSCustomObject]@{ number = 22222; labels = $null }
-Assert-Eq -Label "SR: p/0-labelled PR → true"                      -Expected $true  -Actual (Test-IsP0Pr $srP0Pr)
-Assert-Eq -Label "SR: non-p/0 PR → false"                          -Expected $false -Actual (Test-IsP0Pr $srNonP0Pr)
-Assert-Eq -Label "SR: PR missing labels → false (StrictMode-safe)" -Expected $false -Actual (Test-IsP0Pr $srMissingLbls)
-Assert-Eq -Label "SR: PR null labels → false"                      -Expected $false -Actual (Test-IsP0Pr $srNullLbls)
-Assert-Eq -Label "SR: null PR → false (no throw)"                  -Expected $false -Actual (Test-IsP0Pr $null)
-
-# --- Test-IsP0Pr: hashtable / IDictionary (test-mock) shape ---
-$srHashP0    = @{ number = 35970; labels = @(@{ name = 'p/0' }) }
-$srHashNonP0 = @{ number = 66666; labels = @(@{ name = 'p/1' }) }
-$srHashNoLbl = @{ number = 77777 }                                  # no labels key
-Assert-Eq -Label "SR: hashtable PR with p/0 → true (IDictionary path)"   -Expected $true  -Actual (Test-IsP0Pr $srHashP0)
-Assert-Eq -Label "SR: hashtable PR without p/0 → false"                  -Expected $false -Actual (Test-IsP0Pr $srHashNonP0)
-Assert-Eq -Label "SR: hashtable PR missing labels key → false (no throw)" -Expected $false -Actual (Test-IsP0Pr $srHashNoLbl)
-
-# --- Get-P0PrChecks: emits exactly one BLOCKED/READY ship-check ---
-$srP0Checks = @(Get-P0PrChecks -OpenSrPrs @($srP0Pr, $srNonP0Pr) -SrBranch 'release/10.0.1xx-sr8')
-Assert-Eq -Label "Get-P0PrChecks: one record when p/0 present" -Expected 1 -Actual $srP0Checks.Count
-Assert-Eq -Label "Get-P0PrChecks: Area is 'P/0 release-branch PRs'" -Expected 'P/0 release-branch PRs' -Actual $srP0Checks[0].Area
-Assert-Eq -Label "Get-P0PrChecks: Status BLOCKED when p/0 present" -Expected 'BLOCKED' -Actual $srP0Checks[0].Status
-Assert-Eq -Label "Get-P0PrChecks: Details names #35970" -Expected $true -Actual ($srP0Checks[0].Details -like '*35970*')
-
-# Multiple p/0 PRs: the count and the comma-joined "#a, #b" naming the release
-# captain sees must both be exercised (single-PR fixture above never hits the join).
-$srP0Pr2       = [PSCustomObject]@{ number = 35971; labels = @([PSCustomObject]@{ name = 'p/0' }) }
-$srMultiChecks = @(Get-P0PrChecks -OpenSrPrs @($srP0Pr, $srP0Pr2, $srNonP0Pr) -SrBranch 'release/10.0.1xx-sr8')
-Assert-Eq -Label "Get-P0PrChecks: BLOCKED with 2 p/0 PRs" -Expected 'BLOCKED' -Actual $srMultiChecks[0].Status
-Assert-Eq -Label "Get-P0PrChecks: Details counts 2 p/0 PRs" -Expected $true -Actual ($srMultiChecks[0].Details -like '*2 open P/0-labelled PR(s)*')
-Assert-Eq -Label "Get-P0PrChecks: Details comma-joins #35970, #35971" -Expected $true -Actual ($srMultiChecks[0].Details -like '*#35970, #35971*')
-
-$srNoP0Checks = @(Get-P0PrChecks -OpenSrPrs @($srNonP0Pr) -SrBranch 'release/10.0.1xx-sr8')
-Assert-Eq -Label "Get-P0PrChecks: one record when no p/0" -Expected 1 -Actual $srNoP0Checks.Count
-Assert-Eq -Label "Get-P0PrChecks: Status READY when no p/0" -Expected 'READY' -Actual $srNoP0Checks[0].Status
-
-$srNullThrew = $false
-$srNullChecks = $null
-try { $srNullChecks = @(Get-P0PrChecks -OpenSrPrs $null -SrBranch 'release/10.0.1xx-sr8') } catch { $srNullThrew = $true }
-Assert-Eq -Label "Get-P0PrChecks: null input → no throw" -Expected $false -Actual $srNullThrew
-Assert-Eq -Label "Get-P0PrChecks: null input → READY" -Expected 'READY' -Actual $srNullChecks[0].Status
-
-$srEmptyChecks = @(Get-P0PrChecks -OpenSrPrs @() -SrBranch 'release/10.0.1xx-sr8')
-Assert-Eq -Label "Get-P0PrChecks: empty input → READY" -Expected 'READY' -Actual $srEmptyChecks[0].Status
 
 # =========================================================================
 # Test-IsP0Pr — preview engine p/0 PR blocker classification
