@@ -99,8 +99,18 @@ namespace Microsoft.Maui.Handlers
 		void OnLostFocus(object? sender, RoutedEventArgs e) =>
 			VirtualView?.Completed();
 
-		void OnPlatformViewSizeChanged(object sender, SizeChangedEventArgs e) =>
+		void OnPlatformViewSizeChanged(object sender, SizeChangedEventArgs e)
+		{
+			// Workaround for a WinUI issue where a multiline TextBox does not correctly
+			// recompute its internal scrollable text region when its size changes
+			// WinUI only recalculates the text layout in response to an actual property change, so toggling TextWrapping
+			// forces it to re-measure the text against the control's current size.
+			// See WinUI issue: https://github.com/microsoft/microsoft-ui-xaml/issues/10611
+			PlatformView.TextWrapping = TextWrapping.NoWrap;
+			PlatformView.TextWrapping = TextWrapping.Wrap;
+
 			MauiTextBox.InvalidateAttachedProperties(PlatformView);
+		}
 
 		private void OnSelectionChanged(object sender, RoutedEventArgs e)
 		{
