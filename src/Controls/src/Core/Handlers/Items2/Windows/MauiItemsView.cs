@@ -1,4 +1,5 @@
-﻿using Microsoft.Maui.Controls.Platform;
+﻿using System;
+using Microsoft.Maui.Controls.Platform;
 using Microsoft.Maui.Graphics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -333,11 +334,12 @@ internal partial class MauiItemsView : UI.Xaml.Controls.ItemsView, IEmptyView
 		// Using MinWidth (not Width) preserves horizontal scrolling when content exceeds
 		// the viewport — DesiredSize = max(contentWidth, MinWidth), so the ScrollViewer
 		// still sees the full content extent for many-item scenarios.
+		bool itemsWidthChanged = false;
 		if (_isHorizontalLayout && _itemsRepeater is not null)
 		{
 			if (!emptyViewWillFill && !double.IsInfinity(availableSize.Width) && availableSize.Width > 0)
 			{
-				ApplyItemsRepeaterMinWidth(availableSize);
+				itemsWidthChanged = ApplyItemsRepeaterMinWidth(availableSize);
 			}
 			else
 			{
@@ -361,7 +363,6 @@ internal partial class MauiItemsView : UI.Xaml.Controls.ItemsView, IEmptyView
 		// and the footer; setting MinHeight/MinWidth here pushes the Footer to the
 		// far edge of the viewport when empty.
 		bool emptyViewSizeChanged = SizeEmptyViewToFillViewport(availableSize);
-		bool itemsWidthChanged = ApplyItemsRepeaterMinWidth(availableSize);
 
 		if (emptyViewSizeChanged || itemsWidthChanged)
 		{
@@ -391,7 +392,7 @@ internal partial class MauiItemsView : UI.Xaml.Controls.ItemsView, IEmptyView
 			: 0;
 
 		var remainingWidth = availableSize.Width - headerWidth - footerWidth;
-		var newMinWidth = remainingWidth > 0 ? remainingWidth : 0;
+		var newMinWidth = Math.Max(remainingWidth , 0);
 
 		if (_itemsRepeater.MinWidth == newMinWidth)
 		{
