@@ -221,16 +221,13 @@ namespace Microsoft.Maui.Maps.Handlers
 
 				if (_pinsLayer != null)
 				{
+					// Only unsubscribe our own event - avoid touching _mapControl.Layers here,
+					// since the native MapControl may already be disposed by teardown time.
 					_pinsLayer.MapElementClick -= OnPinLayerElementClick;
-					_mapControl.Layers.Remove(_pinsLayer);
-					_pinsLayer = null;
 				}
 
-				if (_mapElementsLayer != null)
-				{
-					_mapControl.Layers.Remove(_mapElementsLayer);
-					_mapElementsLayer = null;
-				}
+				_pinsLayer = null;
+				_mapElementsLayer = null;
 			}
 
 			_mapIcons.Clear();

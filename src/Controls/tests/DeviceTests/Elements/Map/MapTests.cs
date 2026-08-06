@@ -4,15 +4,34 @@ using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Maps;
 using Xunit;
+#if WINDOWS
+using System.Reflection;
+using Microsoft.Maui.Controls.Hosting;
+using Microsoft.Maui.Hosting;
+using Microsoft.UI.Xaml;
+#endif
 
 namespace Microsoft.Maui.DeviceTests
 {
 	// Android requires a Google Maps API key to instantiate MapView,
 	// which is not available in the test environment.
-#if IOS || MACCATALYST
+#if IOS || MACCATALYST || WINDOWS
 	[Category(TestCategory.Map)]
 	public partial class MapTests : ControlsHandlerTestBase
 	{
+#if WINDOWS
+		void SetupBuilder()
+		{
+			EnsureHandlerCreated(builder =>
+			{
+				builder.ConfigureMauiHandlers(handlers =>
+				{
+					handlers.AddMauiMaps();
+				});
+			});
+		}
+#endif
+
 		static Polygon CreatePolygon() => new()
 		{
 			Geopath =
@@ -24,6 +43,7 @@ namespace Microsoft.Maui.DeviceTests
 			}
 		};
 
+#if IOS || MACCATALYST
 		// Regression test for https://github.com/dotnet/maui/issues/30097
 		[Fact]
 		public async Task ClearMapElementsResetsMapElementId()
@@ -149,6 +169,43 @@ namespace Microsoft.Maui.DeviceTests
 			Assert.True(platformView.Annotations is null || platformView.Annotations.Length == 0);
 			Assert.True(platformView.Overlays is null || platformView.Overlays.Length == 0);
 		}
+#endif
+
+#if WINDOWS
+		// Regression test for https://github.com/dotnet/maui/issues/37096
+		// [Windows] Declaring a Map in XAML Causes Fault on Page Exit.
+		//
+		// The native MapControl's Unloaded event (wired to MapHandler.OnMapControlUnloaded)
+		// used to crash the app with an unrecoverable native fault when it tried to remove
+		// its layers from a MapControl.Layers collection that the native control had already
+		// torn down. We simulate that native Unloaded callback directly via reflection here,
+		// rather than going through a full Window-close lifecycle (CreateHandlerAndAddToWindow),
+		// because the shared test harness's own window-teardown path
+		// (ControlsHandlerTestBase.Windows.cs) is unrelated infrastructure with its own timing
+		// characteristics around closing native windows - we only want to exercise the
+		// MapHandler's own unload/cleanup logic in isolation.
+		[Fact]
+		public async Task OnMapControlUnloadedDoesNotCrash()
+		{
+			SetupBuilder();
+
+			var map = new Map();
+			var handler = await CreateHandlerAsync<Microsoft.Maui.Maps.Handlers.MapHandler>(map);
+
+			await InvokeOnMainThreadAsync(() =>
+			{
+				var platformView = (FrameworkElement)handler.PlatformView;
+
+				var onMapControlUnloaded = typeof(Microsoft.Maui.Maps.Handlers.MapHandler).GetMethod(
+					"OnMapControlUnloaded", BindingFlags.Instance | BindingFlags.NonPublic);
+
+				Assert.NotNull(onMapControlUnloaded);
+
+				// This used to throw/crash before the fix.
+				onMapControlUnloaded.Invoke(handler, new object[] { platformView, null });
+			});
+		}
+#endif
 	}
 #endif
 }
