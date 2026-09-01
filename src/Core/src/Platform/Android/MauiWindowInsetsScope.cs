@@ -495,8 +495,21 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 			return;
 		}
 
-		if (!TryGetSlotInScope(view, out var slot))
+		var safeAreaView = view is ICrossPlatformLayoutBacking backing
+			? SafeAreaExtensions.GetSafeAreaView2(backing.CrossPlatformLayout)
+			: null;
+
+		if (safeAreaView is null || !ShouldApplySafeArea(view, safeAreaView.HasExplicitSafeAreaEdges))
 		{
+			node.ResetContribution();
+			ResolveChildren(node, inheritedContext);
+			return;
+		}
+
+		if (!TryGetSlotInScope(view, safeAreaView as IView, out var slot))
+		{
+			node.ResetContribution();
+			ResolveChildren(node, inheritedContext);
 			return;
 		}
 
@@ -514,25 +527,45 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 				context.Claims |= router.Claims;
 			}
 		}
-		var safeAreaView = view is ICrossPlatformLayoutBacking backing
-			? SafeAreaExtensions.GetSafeAreaView2(backing.CrossPlatformLayout)
-			: null;
 
-		if (safeAreaView is not null)
-		{
-			var isExplicit = safeAreaView.HasExplicitSafeAreaEdges;
-			var contribution = ResolveContribution(safeAreaView, isExplicit, slot, ref context);
-			node.ApplyContribution(contribution);
-		}
-		else
-		{
-			node.ResetContribution();
-		}
+		var isExplicit = safeAreaView.HasExplicitSafeAreaEdges;
+		var contribution = ResolveContribution(safeAreaView, isExplicit, slot, ref context);
+		node.ApplyContribution(contribution);
 
+		ResolveChildren(node, context);
+	}
+
+	void ResolveChildren(ParticipantNode node, SafeAreaBranchContext context)
+	{
 		for (int i = 0; i < node.Children.Count; i++)
 		{
 			ResolveNode(node.Children[i], context);
 		}
+	}
+
+	static bool ShouldApplySafeArea(AView view, bool hasExplicitSafeAreaEdges)
+	{
+		var parent = view.Parent;
+		var isInsideRecyclerEmptyView = false;
+
+		while (parent is not null)
+		{
+			if (parent is IMauiRecyclerViewEmptyView)
+			{
+				isInsideRecyclerEmptyView = true;
+			}
+
+			if (parent is AppBarLayout ||
+				parent is MauiScrollView ||
+				(parent is IMauiRecyclerView && !isInsideRecyclerEmptyView && !hasExplicitSafeAreaEdges))
+			{
+				return false;
+			}
+
+			parent = parent.Parent;
+		}
+
+		return true;
 	}
 
 	SafeAreaPadding ResolveContribution(
@@ -556,7 +589,7 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 			}
 
 			double resolved = 0;
-			if (SafeAreaEdges.IsContainer(region))
+			if (region == SafeAreaRegions.Default || SafeAreaEdges.IsContainer(region))
 			{
 				var systemBars = ResolveSourceOverlap(InsetSource.SystemBars, edge, slot, context.Claims);
 				var displayCutout = ResolveSourceOverlap(InsetSource.DisplayCutout, edge, slot, context.Claims);
@@ -657,7 +690,7 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 		};
 	}
 
-	bool TryGetSlotInScope(AView view, out ParticipantSlot slot)
+	bool TryGetSlotInScope(AView view, IView? virtualView, out ParticipantSlot slot)
 	{
 		if (view.Width <= 0 || view.Height <= 0 || HostView.Width <= 0 || HostView.Height <= 0)
 		{
@@ -681,7 +714,20 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 			return false;
 		}
 
-		slot = new ParticipantSlot(left, top, left + view.Width, top + view.Height);
+		var right = left + view.Width;
+		var bottom = top + view.Height;
+
+		if (virtualView is not null)
+		{
+			var margin = virtualView.Margin;
+			var context = view.Context;
+			left = Math.Max(0, left - (int)context.ToPixels(margin.Left));
+			top = Math.Max(0, top - (int)context.ToPixels(margin.Top));
+			right += (int)context.ToPixels(margin.Right);
+			bottom += (int)context.ToPixels(margin.Bottom);
+		}
+
+		slot = new ParticipantSlot(left, top, right, bottom);
 		return true;
 	}
 
