@@ -342,16 +342,14 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 		var bottomTabs = HostView.FindViewById<AView>(Resource.Id.navigationlayout_bottomtabs);
 		var appBarHasContent = HasMeasuredContent(appBar);
 		var bottomTabsVisible = bottomTabs is not null && bottomTabs.Visibility == ViewStates.Visible && bottomTabs.MeasuredHeight > 0;
-		var containerLeft = Math.Max(Snapshot.SystemBars.Left, Snapshot.DisplayCutout.Left);
 		var containerTop = Math.Max(Snapshot.SystemBars.Top, Snapshot.DisplayCutout.Top);
-		var containerRight = Math.Max(Snapshot.SystemBars.Right, Snapshot.DisplayCutout.Right);
 		var containerBottom = Math.Max(Snapshot.SystemBars.Bottom, Snapshot.DisplayCutout.Bottom);
 
 		_appBarApplicator.Apply(
 			appBar,
-			appBarHasContent ? containerLeft : 0,
+			appBarHasContent ? Snapshot.SystemBars.Left : 0,
 			appBarHasContent ? containerTop : 0,
-			appBarHasContent ? containerRight : 0,
+			appBarHasContent ? Snapshot.SystemBars.Right : 0,
 			0);
 
 		var toolbar = FindDescendant<MaterialToolbar>(appBar);
@@ -499,14 +497,9 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 			? SafeAreaExtensions.GetSafeAreaView2(backing.CrossPlatformLayout)
 			: null;
 
-		if (safeAreaView is null || !ShouldApplySafeArea(view, safeAreaView.HasExplicitSafeAreaEdges))
-		{
-			node.ResetContribution();
-			ResolveChildren(node, inheritedContext);
-			return;
-		}
-
-		if (!TryGetSlotInScope(view, safeAreaView as IView, out var slot))
+		if (safeAreaView is null ||
+			!ShouldApplySafeArea(view, safeAreaView.HasExplicitSafeAreaEdges) ||
+			!TryGetSlotInScope(view, safeAreaView as IView, out var slot))
 		{
 			node.ResetContribution();
 			ResolveChildren(node, inheritedContext);
@@ -589,7 +582,9 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 			}
 
 			double resolved = 0;
-			if (region == SafeAreaRegions.Default || SafeAreaEdges.IsContainer(region))
+			if (region == SafeAreaRegions.Default ||
+				SafeAreaEdges.IsContainer(region) ||
+				(edge != 3 && SafeAreaEdges.IsSoftInput(region)))
 			{
 				var systemBars = ResolveSourceOverlap(InsetSource.SystemBars, edge, slot, context.Claims);
 				var displayCutout = ResolveSourceOverlap(InsetSource.DisplayCutout, edge, slot, context.Claims);
@@ -663,6 +658,22 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 			3 => Math.Clamp(slot.Bottom - (HostView.Height - sourceInsets.Bottom), 0, sourceInsets.Bottom),
 			_ => 0,
 		};
+	}
+
+	int ResolveBottomOverlap(AView view, int bottomInset)
+	{
+		if (bottomInset <= 0 || view.Height <= 0 || HostView.Height <= 0)
+		{
+			return bottomInset;
+		}
+
+		var viewLocation = new int[2];
+		var hostLocation = new int[2];
+		view.GetLocationInWindow(viewLocation);
+		HostView.GetLocationInWindow(hostLocation);
+
+		var viewBottom = viewLocation[1] - hostLocation[1] + view.Height;
+		return Math.Clamp(viewBottom - (HostView.Height - bottomInset), 0, bottomInset);
 	}
 
 	WindowInsetEdges GetEffectiveImeInsets()
@@ -885,6 +896,8 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 
 		public SourceEdgeMask Claims { get; protected set; }
 
+		protected MauiWindowInsetsScope? Scope => _scope;
+
 		public abstract void Apply(in WindowInsetsSnapshot snapshot);
 
 		public abstract void Reset();
@@ -947,9 +960,9 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 			var hasContent = HasMeasuredContent(_appBar);
 			_appBarApplicator.Apply(
 				_appBar,
-				hasContent ? Math.Max(snapshot.SystemBars.Left, snapshot.DisplayCutout.Left) : 0,
+				hasContent ? snapshot.SystemBars.Left : 0,
 				hasContent ? Math.Max(snapshot.SystemBars.Top, snapshot.DisplayCutout.Top) : 0,
-				hasContent ? Math.Max(snapshot.SystemBars.Right, snapshot.DisplayCutout.Right) : 0,
+				hasContent ? snapshot.SystemBars.Right : 0,
 				0);
 
 			var toolbar = FindDescendant<MaterialToolbar>(_appBar);
@@ -983,12 +996,18 @@ internal sealed class MauiWindowInsetsScope : IDisposable
 
 		public override void Apply(in WindowInsetsSnapshot snapshot)
 		{
+			var bottom = Math.Max(snapshot.SystemBars.Bottom, snapshot.DisplayCutout.Bottom);
+			if (Scope is not null)
+			{
+				bottom = Scope.ResolveBottomOverlap(RootView, bottom);
+			}
+
 			_applicator.Apply(
 				RootView,
 				Math.Max(snapshot.SystemBars.Left, snapshot.DisplayCutout.Left),
 				Math.Max(snapshot.SystemBars.Top, snapshot.DisplayCutout.Top),
 				Math.Max(snapshot.SystemBars.Right, snapshot.DisplayCutout.Right),
-				Math.Max(snapshot.SystemBars.Bottom, snapshot.DisplayCutout.Bottom));
+				bottom);
 
 			Claims = SourceEdgeMask.None;
 			for (int edge = 0; edge < 4; edge++)
