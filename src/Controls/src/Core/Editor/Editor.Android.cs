@@ -5,6 +5,14 @@ namespace Microsoft.Maui.Controls
 {
 	public partial class Editor
 	{
+		static void MapAutoSize(IEditorHandler handler, Editor editor)
+		{
+			if (handler.PlatformView is Microsoft.Maui.Platform.MauiAppCompatEditText editText)
+			{
+				editText.AllowAutoGrowth = editor.AutoSize == EditorAutoSizeOption.TextChanges;
+			}
+		}
+
 		public static void MapText(EditorHandler handler, Editor editor) =>
 			MapText((IEditorHandler)handler, editor);
 

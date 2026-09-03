@@ -53,6 +53,18 @@ namespace Microsoft.Maui.Handlers
 			_set = false;
 		}
 
+		public override Size GetDesiredSize(double widthConstraint, double heightConstraint)
+		{
+			if (double.IsInfinity(heightConstraint) &&
+				!PlatformView.AllowAutoGrowth &&
+				PlatformView.Height > 0)
+			{
+				heightConstraint = Context.FromPixels(PlatformView.Height);
+			}
+
+			return base.GetDesiredSize(widthConstraint, heightConstraint);
+		}
+
 		public static void MapBackground(IEditorHandler handler, IEditor editor) =>
 			handler.PlatformView?.UpdateBackground(editor);
 

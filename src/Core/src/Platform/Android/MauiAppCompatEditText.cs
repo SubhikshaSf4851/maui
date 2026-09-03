@@ -8,6 +8,8 @@ namespace Microsoft.Maui.Platform
 	{
 		public event EventHandler? SelectionChanged;
 
+		internal bool AllowAutoGrowth { get; set; }
+
 		public MauiAppCompatEditText(Context context) : base(context)
 		{
 		}

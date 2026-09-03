@@ -151,6 +151,7 @@ override Microsoft.Maui.Handlers.ActivityIndicatorHandler2.PlatformArrange(Micro
 override Microsoft.Maui.Handlers.DatePickerHandler2.ConnectHandler(Microsoft.Maui.Platform.MauiMaterialDatePicker! platformView) -> void
 override Microsoft.Maui.Handlers.DatePickerHandler2.CreatePlatformView() -> Microsoft.Maui.Platform.MauiMaterialDatePicker!
 override Microsoft.Maui.Handlers.DatePickerHandler2.DisconnectHandler(Microsoft.Maui.Platform.MauiMaterialDatePicker! platformView) -> void
+override Microsoft.Maui.Handlers.EditorHandler.GetDesiredSize(double widthConstraint, double heightConstraint) -> Microsoft.Maui.Graphics.Size
 override Microsoft.Maui.Handlers.EditorHandler2.ConnectHandler(Microsoft.Maui.Platform.MauiMaterialEditText! platformView) -> void
 override Microsoft.Maui.Handlers.EditorHandler2.CreatePlatformView() -> Microsoft.Maui.Platform.MauiMaterialEditText!
 override Microsoft.Maui.Handlers.EditorHandler2.DisconnectHandler(Microsoft.Maui.Platform.MauiMaterialEditText! platformView) -> void
