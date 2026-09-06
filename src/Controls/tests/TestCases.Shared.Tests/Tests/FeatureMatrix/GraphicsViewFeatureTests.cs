@@ -265,9 +265,7 @@ public class GraphicsViewFeatureTests : _GalleryUITest
 	#endregion
 
 	#region Shadow Tests
-#if TEST_FAILS_ON_WINDOWS
-	// Note: Shadow tests are currently disabled on Windows due to known issues with GraphicsView                                                                                                    
-	//See Issue : https://github.com/dotnet/maui/issues/30778	
+
 	[Test]
 	[Category(UITestCategories.GraphicsView)]
 	public void GraphicsView_SetShadowProperties_VerifyVisualState()
@@ -301,7 +299,7 @@ public class GraphicsViewFeatureTests : _GalleryUITest
 		App.Tap("DrawableTypeLabel");
 		VerifyShapeScreenshot();
 	}
-#endif
+
 	#endregion
 
 

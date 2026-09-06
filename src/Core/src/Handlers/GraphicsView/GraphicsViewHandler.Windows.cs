@@ -10,7 +10,7 @@ namespace Microsoft.Maui.Handlers
 		{
 			return new PlatformTouchGraphicsView();
 		}
-
+		public override bool NeedsContainer => true;
 		private protected override void OnConnectHandler(FrameworkElement platformView)
 		{
 			base.OnConnectHandler(platformView);
