@@ -16,8 +16,6 @@ namespace Microsoft.Maui.Controls
 			EditorHandler.Mapper.ReplaceMapping<Editor, IEditorHandler>(nameof(TextTransform), MapText);
 
 #if ANDROID
-			EditorHandler.Mapper.AppendToMapping<Editor, IEditorHandler>(nameof(AutoSize), MapAutoSize);
-
 			if (RuntimeFeature.IsMaterial3Enabled)
 			{
 				EditorHandler2.Mapper.ReplaceMapping<Editor, EditorHandler2>(nameof(Text), MapText);
