@@ -28,6 +28,7 @@ namespace Microsoft.Maui.Controls.Handlers
 		ObservableCollection<NavigationViewItemViewModel> _mainLevelTabs;
 		ShellItem? _shellItem;
 		SearchHandler? _currentSearchHandler;
+		Button? _clearPlaceholderButton;
 		IShellAppearanceElement? _shellAppearanceElement;
 		readonly HashSet<ShellSection> _trackedShellSections = new();
 
@@ -101,6 +102,12 @@ namespace Microsoft.Maui.Controls.Handlers
 					autoSuggestBox.LostFocus -= OnSearchBoxLostFocus;
 					autoSuggestBox.Loaded -= AutoSuggestBoxOnLoaded;
 				}
+			}
+
+			if (_clearPlaceholderButton is not null)
+			{
+				_clearPlaceholderButton.Click -= OnClearPlaceholderButtonClicked;
+				_clearPlaceholderButton = null;
 			}
 
 			platformView.Loaded -= OnNavigationViewLoaded;
@@ -411,6 +418,7 @@ namespace Microsoft.Maui.Controls.Handlers
 			}
 
 			mauiNavView.AutoSuggestBox.UpdateSearchHandlerCancelButtonColor(_currentSearchHandler);
+			UpdateClearPlaceholderButton();
 		}
 
 		void OnSearchBoxGotFocus(object sender, RoutedEventArgs e)
@@ -455,6 +463,8 @@ namespace Microsoft.Maui.Controls.Handlers
 			{
 				_currentSearchHandler.Query = sender.Text;
 			}
+
+			UpdateClearPlaceholderButton();
 		}
 
 		void OnSearchBoxSuggestionChosen(Microsoft.UI.Xaml.Controls.AutoSuggestBox sender, Microsoft.UI.Xaml.Controls.AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -601,9 +611,10 @@ namespace Microsoft.Maui.Controls.Handlers
 				case nameof(SearchHandler.QueryIcon):
 					UpdateQueryIcon();
 					break;
-					// TODO: ClearIcon and ClearPlaceholderIcon are not supported on Windows
-					// (AutoSuggestBox has no built-in clear/placeholder icon API).
-					// Tracked in: https://github.com/dotnet/maui/issues/28619
+				case nameof(SearchHandler.ClearPlaceholderIcon):
+				case nameof(SearchHandler.ClearPlaceholderEnabled):
+					UpdateClearPlaceholderButton();
+					break;
 			}
 		}
 
@@ -619,6 +630,62 @@ namespace Microsoft.Maui.Controls.Handlers
 				else
 					mauiNavView.AutoSuggestBox.QueryIcon = new SymbolIcon(Symbol.Find);
 			}
+		}
+
+		void UpdateClearPlaceholderButton()
+		{
+			if (PlatformView is not NavigationView mauiNavView ||
+				mauiNavView.AutoSuggestBox is not { } autoSuggestBox)
+			{
+				return;
+			}
+
+			var clearButton = autoSuggestBox.GetDescendantByName<Button>("DeleteButton");
+			if (clearButton is null)
+			{
+				return;
+			}
+
+			if (_clearPlaceholderButton != clearButton)
+			{
+				if (_clearPlaceholderButton is not null)
+				{
+					_clearPlaceholderButton.Click -= OnClearPlaceholderButtonClicked;
+				}
+
+				_clearPlaceholderButton = clearButton;
+				_clearPlaceholderButton.Click += OnClearPlaceholderButtonClicked;
+			}
+
+			if (_currentSearchHandler?.ClearPlaceholderIcon is FileImageSource imageSource &&
+				_currentSearchHandler.ClearPlaceholderEnabled &&
+				string.IsNullOrEmpty(autoSuggestBox.Text))
+			{
+				clearButton.Content = new BitmapIcon
+				{
+					UriSource = new Uri("ms-appx:///" + imageSource.File)
+				};
+				clearButton.Visibility = Visibility.Visible;
+			}
+			else
+			{
+				clearButton.ClearValue(ContentControl.ContentProperty);
+				clearButton.ClearValue(UIElement.VisibilityProperty);
+			}
+		}
+
+		void OnClearPlaceholderButtonClicked(object sender, RoutedEventArgs e)
+		{
+			if (_currentSearchHandler is null ||
+				PlatformView is not NavigationView mauiNavView ||
+				mauiNavView.AutoSuggestBox is not { } autoSuggestBox ||
+				!string.IsNullOrEmpty(autoSuggestBox.Text) ||
+				!_currentSearchHandler.ClearPlaceholderEnabled)
+			{
+				return;
+			}
+
+			((ISearchHandlerController)_currentSearchHandler).ClearPlaceholderClicked();
 		}
 
 		ShellSection? _currentShellSection;

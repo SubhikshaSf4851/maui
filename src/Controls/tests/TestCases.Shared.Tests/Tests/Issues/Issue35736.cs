@@ -28,9 +28,6 @@ public class Issue35736 : _IssuesUITest
 
 	[Test]
 	[Category(UITestCategories.Shell)]
-#if WINDOWS
-	[Ignore("ClearPlaceholderIcon is not displayed in Shell SearchHander : https://github.com/dotnet/maui/issues/28619")]
-#endif
 	public void SearchHandlerClearPlaceholderIconUpdatesAtRuntime()
 	{
 		App.WaitForElement("Issue35736ClearPlaceholderIconLabel");
