@@ -8,6 +8,9 @@ namespace Microsoft.Maui.Platform
 {
 	public partial class MauiToolbar
 	{
+		// DefaultCommandBarStyle reserves 4 units before content and a 6-unit trailing More-button column.
+		const double ContentWidthInset = 10;
+
 		public static readonly DependencyProperty IsBackButtonVisibleProperty
 			= DependencyProperty.Register(nameof(IsBackButtonVisible), typeof(NavigationViewBackButtonVisible), typeof(MauiToolbar),
 				new PropertyMetadata(NavigationViewBackButtonVisible.Collapsed));
@@ -25,6 +28,7 @@ namespace Microsoft.Maui.Platform
 		public MauiToolbar()
 		{
 			InitializeComponent();
+			SizeChanged += OnSizeChanged;
 		}
 
 		internal string? Title
@@ -80,6 +84,10 @@ namespace Microsoft.Maui.Platform
 			}
 		}
 
+		void OnSizeChanged(object sender, SizeChangedEventArgs e)
+		{
+			contentGrid.Width = Math.Max(0, e.NewSize.Width - ContentWidthInset);
+		}
 		internal void SetBarTextColor(WBrush? brush)
 		{
 			if (brush != null)
