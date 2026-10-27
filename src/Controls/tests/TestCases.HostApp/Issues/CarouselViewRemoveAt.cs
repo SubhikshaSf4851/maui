@@ -12,6 +12,8 @@ namespace Maui.Controls.Sample.Issues
 		{
 			public ModalPage()
 			{
+				SafeAreaEdges = new SafeAreaEdges(SafeAreaRegions.Container);
+
 				var btn = new Button
 				{
 					AutomationId = "CloseMe",
