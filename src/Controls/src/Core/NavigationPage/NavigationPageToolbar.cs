@@ -278,7 +278,8 @@ namespace Microsoft.Maui.Controls
 			IconColor = GetIconColor();
 			Title = GetTitle();
 			TitleView = GetTitleView();
-			DynamicOverflowEnabled = PlatformConfiguration.WindowsSpecific.Page.GetToolbarDynamicOverflowEnabled(_currentPage);
+			DynamicOverflowEnabled = TitleView is null &&
+								PlatformConfiguration.WindowsSpecific.Page.GetToolbarDynamicOverflowEnabled(currentPage);
 		}
 
 		Color GetBarTextColor() => _currentNavigationPage?.BarTextColor;
