@@ -473,12 +473,7 @@ namespace Microsoft.Maui.Controls.Handlers
                 return;
             }
 
-            var shellSections = ((IShellItemController)shellItem).GetItems();
             SetAutomationIdAccessibilityDelegate(bottomNavigationView, shellItem.AutomationId);
-
-            var visibleItemCount = shellSections.Count > bottomNavigationView.MaxItemCount
-                ? bottomNavigationView.MaxItemCount - 1
-                : shellSections.Count;
 
             bottomNavigationView.Post(() =>
             {
@@ -488,6 +483,11 @@ namespace Microsoft.Maui.Controls.Handlers
                 {
                     return;
                 }
+
+                var shellSections = ((IShellItemController)currentShellItem).GetItems();
+                var visibleItemCount = shellSections.Count > bottomNavigationView.MaxItemCount
+                    ? bottomNavigationView.MaxItemCount - 1
+                    : shellSections.Count;
 
                 for (int i = 0; i < visibleItemCount; i++)
                 {
@@ -510,7 +510,9 @@ namespace Microsoft.Maui.Controls.Handlers
         static void SetAutomationIdAccessibilityDelegate(AView view, string? automationId)
         {
             var currentDelegate = ViewCompat.GetAccessibilityDelegate(view);
-            var originalDelegate = (currentDelegate as AutomationIdAccessibilityDelegate)?.WrappedDelegate ?? currentDelegate;
+            var originalDelegate = currentDelegate is AutomationIdAccessibilityDelegate automationIdDelegate
+                ? automationIdDelegate.WrappedDelegate
+                : currentDelegate;
 
             ViewCompat.SetAccessibilityDelegate(
                 view,
@@ -891,6 +893,7 @@ namespace Microsoft.Maui.Controls.Handlers
             // Rebuild an existing bottom navigation menu. A newly-created manager was
             // already populated by SetElement in SetupTabbedViewManager.
             existingTabbedViewManager?.RefreshTabs();
+            UpdateValue(nameof(Element.AutomationId));
             UpdateTabBarVisibility();
 
             // Signal that the adapter was just rebuilt. The next SwitchToSection call
