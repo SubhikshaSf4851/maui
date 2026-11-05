@@ -1305,7 +1305,9 @@ namespace Microsoft.Maui.Controls.Handlers
                     image = TabbedViewExtensions.AutoResizeTabBarImage(_navigationController.TraitCollection, icon.Value);
                 }
                 _navigationController.TabBarItem = new UITabBarItem(section.Title, image, null);
-                _navigationController.TabBarItem.AccessibilityIdentifier = section.AutomationId ?? section.Title;
+                _navigationController.TabBarItem.AccessibilityIdentifier = section.AutomationId ??
+                    section.CurrentItem?.AutomationId ??
+                    section.Title;
 
                 // Reapply badge state after recreating UITabBarItem.
                 ShellItemHandler.UpdateTabBarItemBadge(_navigationController.TabBarItem, section);
