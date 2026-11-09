@@ -13,6 +13,14 @@
         DefaultTemplateName="MauiAppTitleBarContainerTemplateDefault"
         x:Key="MauiAppTitleBarContainerTemplateSelector"/>
 
+    <Style x:Key="MauiWindowTitleActiveStyle" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
+    </Style>
+
+    <Style x:Key="MauiWindowTitleInactiveStyle" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+        <Setter Property="Foreground" Value="{ThemeResource TextFillColorDisabledBrush}"/>
+    </Style>
+
     <DataTemplate x:Key="MauiAppTitleBarTemplateDefault">
         <Grid
             Canvas.ZIndex="1" 
@@ -37,8 +45,7 @@
                  Margin="16,0,0,0"
                  MinWidth="48"
                  Text="{Binding WindowTitle}"
-                 Foreground="{Binding WindowTitleForeground}"
-                 Style="{StaticResource CaptionTextBlockStyle}"
+                 Style="{Binding WindowTitleStyle}"
                  Grid.Column="1"
                  TextTrimming="CharacterEllipsis"
                  TextWrapping="NoWrap"/>

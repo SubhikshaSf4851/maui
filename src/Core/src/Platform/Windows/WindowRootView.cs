@@ -643,6 +643,19 @@ namespace Microsoft.Maui.Platform
 			set => SetValue(WindowTitleForegroundProperty, value);
 		}
 
+		internal static readonly DependencyProperty WindowTitleStyleProperty =
+			DependencyProperty.Register(
+				nameof(WindowTitleStyle),
+				typeof(Style),
+				typeof(WindowRootView),
+				new PropertyMetadata(null));
+
+		internal Style? WindowTitleStyle
+		{
+			get => (Style?)GetValue(WindowTitleStyleProperty);
+			set => SetValue(WindowTitleStyleProperty, value);
+		}
+
 		internal static readonly DependencyProperty WindowTitleBarContainerMarginProperty =
 			DependencyProperty.Register(
 				nameof(WindowTitleBarContainerMargin),
