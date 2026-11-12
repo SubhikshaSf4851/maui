@@ -47,10 +47,8 @@ namespace Microsoft.Maui.Media
 			return result ?? throw new InvalidOperationException("Unable to capture screenshot.");
 		}
 
-		public async Task<IScreenshotResult?> CaptureAsync(View view)
-		{
-			return await CaptureAsync(view, GetActivity(view.Context)?.Window).ConfigureAwait(false);
-		}
+		public Task<IScreenshotResult?> CaptureAsync(View view) =>
+			CaptureViewAsync(view);
 
 		async Task<IScreenshotResult?> CaptureAsync(View view, Window? window)
 		{
@@ -61,7 +59,15 @@ namespace Microsoft.Maui.Media
 		}
 
 		public Task<IScreenshotResult?> CaptureViewAsync(object platformView) =>
-			platformView is View view ? CaptureAsync(view)! : Task.FromResult<IScreenshotResult?>(null);
+			platformView is View view ? CaptureViewAsync(view) : Task.FromResult<IScreenshotResult?>(null);
+
+		static Task<IScreenshotResult?> CaptureViewAsync(View view)
+		{
+			_ = view ?? throw new ArgumentNullException(nameof(view));
+
+			var bitmap = RenderUsingCanvasDrawing(view) ?? RenderUsingDrawingCache(view);
+			return Task.FromResult<IScreenshotResult?>(bitmap is null ? null : new ScreenshotResult(bitmap));
+		}
 
 		static async Task<Bitmap?> RenderAsync(View view, Window? window)
 		{
