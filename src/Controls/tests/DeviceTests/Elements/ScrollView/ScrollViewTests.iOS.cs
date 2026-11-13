@@ -4,16 +4,61 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.PlatformConfiguration;
 using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Hosting;
 using UIKit;
 using Xunit;
+using iOS = Microsoft.Maui.Controls.PlatformConfiguration.iOS;
+using iOSScrollView = Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific.ScrollView;
 
 namespace Microsoft.Maui.DeviceTests
 {
 	public partial class ScrollViewTests
 	{
+		[Fact]
+		public async Task ScrollViewWithButton_DeliversContentTouchesImmediatelyByDefault()
+		{
+			EnsureHandlerCreated(builder => builder.ConfigureMauiHandlers(handlers =>
+			{
+				handlers.AddHandler<Button, ButtonHandler>();
+			}));
+
+			var scrollView = new ScrollView
+			{
+				Content = new Button()
+			};
+
+			Assert.False(iOSScrollView.ShouldDelayContentTouches(scrollView.On<iOS>()));
+
+			await AttachAndRun<ScrollViewHandler>(scrollView, handler =>
+			{
+				Assert.False(handler.PlatformView.DelaysContentTouches);
+			});
+		}
+
+		[Fact]
+		public async Task ScrollViewWithButton_CanDelayContentTouchesWhenEnabled()
+		{
+			EnsureHandlerCreated(builder => builder.ConfigureMauiHandlers(handlers =>
+			{
+				handlers.AddHandler<Button, ButtonHandler>();
+			}));
+
+			var scrollView = new ScrollView
+			{
+				Content = new Button()
+			};
+
+			iOSScrollView.SetShouldDelayContentTouches(scrollView.On<iOS>(), true);
+
+			await AttachAndRun<ScrollViewHandler>(scrollView, handler =>
+			{
+				Assert.True(handler.PlatformView.DelaysContentTouches);
+			});
+		}
+
 		[Fact]
 		public async Task ScrollViewContentSizeSet()
 		{
