@@ -17,23 +17,15 @@ public class Issue26910 : ContentPage
 			}
 		};
 
-		grid.Add(new StackLayout
+		grid.Add(new Label
 		{
-			Children =
-			{
-				new Label
-				{
-					AutomationId = "Issue26910Instructions",
-					Text = "1.The test passes if the content of the long text items are loaded correctly. Rotate between portrait and landscape twice; the items should resize without extra blank space."
-				}
-			}
+			Text = "1.The test passes if the content of the long text items are loaded correctly. Rotate between portrait and landscape twice; the items should resize without extra blank space."
 		}, 0, 0);
 
 		var collectionView = new CollectionView
 		{
 			AutomationId = "Issue26910CollectionView",
 			SelectionMode = SelectionMode.None,
-			// The indices only distinguish automation IDs; all four items render identical content.
 			ItemsSource = new[] { 1, 2, 3, 4 },
 			ItemTemplate = new DataTemplate(() =>
 			{
@@ -57,7 +49,6 @@ public class Issue26910 : ContentPage
 						continue;
 
 					var label = new Label { Text = $"C{column + 1}" };
-					label.SetBinding(AutomationIdProperty, new Binding(".", stringFormat: $"Issue26910C{column + 1}Item{{0}}"));
 					itemGrid.Add(label, column, 0);
 				}
 
