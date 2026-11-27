@@ -37,6 +37,10 @@ namespace Microsoft.Maui.Handlers
 				SoundEffectsEnabled = false
 			};
 
+			// MAUI's MaximumWidth controls measurement. The theme's maxWidth can otherwise
+			// measure wrapped text at a narrower width than the button is arranged at.
+			platformButton.SetMaxWidth(int.MaxValue);
+
 			return platformButton;
 		}
 
