@@ -16,12 +16,109 @@ using Xunit;
 using static Microsoft.Maui.DeviceTests.AssertHelpers;
 using AInsets = AndroidX.Core.Graphics.Insets;
 using AView = Android.Views.View;
+using Button = Microsoft.Maui.Controls.Button;
 using ScrollView = Microsoft.Maui.Controls.ScrollView;
 
 namespace Microsoft.Maui.DeviceTests
 {
 	public partial class CollectionViewTests : ControlsHandlerTestBase
 	{
+		[Theory]
+		[InlineData(ItemSizingStrategy.MeasureAllItems, double.PositiveInfinity)]
+		[InlineData(ItemSizingStrategy.MeasureFirstItem, double.PositiveInfinity)]
+		[InlineData(ItemSizingStrategy.MeasureAllItems, 350)]
+		[InlineData(ItemSizingStrategy.MeasureFirstItem, 350)]
+		public async Task WrappedButtonItemResizesWithCollectionView(ItemSizingStrategy sizingStrategy, double maximumWidth)
+		{
+			SetupBuilder();
+
+			await InvokeOnMainThreadAsync(() =>
+			{
+				CollectionView CreateCollectionView() => new CollectionView
+				{
+					ItemSizingStrategy = sizingStrategy,
+					SelectionMode = SelectionMode.None,
+					ItemsSource = new[] { "First", "Second", "Third", "Fourth" },
+					ItemTemplate = new DataTemplate(() =>
+					{
+						var grid = new Grid
+						{
+							ColumnDefinitions =
+							{
+								new ColumnDefinition(GridLength.Auto),
+								new ColumnDefinition(GridLength.Auto),
+								new ColumnDefinition(GridLength.Auto),
+								new ColumnDefinition(GridLength.Star),
+								new ColumnDefinition(GridLength.Auto),
+								new ColumnDefinition(GridLength.Auto),
+								new ColumnDefinition(GridLength.Auto)
+							}
+						};
+
+						for (int column = 0; column < 7; column++)
+						{
+							View child = column == 3
+								? new Button
+								{
+									LineBreakMode = LineBreakMode.WordWrap,
+									MaximumWidthRequest = maximumWidth,
+									Text = "A long button text that must wrap onto multiple lines. " +
+										"Changing the available width must recalculate the item height " +
+										"without leaving the space from the previous layout."
+								}
+								: new Label { Text = $"C{column + 1}" };
+							Grid.SetColumn(child, column);
+							grid.Children.Add(child);
+						}
+
+						return grid;
+					})
+				};
+
+				int MeasureAndLayout(RecyclerView recyclerView, int width, int height)
+				{
+					int pixelWidth = (int)recyclerView.Context.ToPixels(width);
+					int pixelHeight = (int)recyclerView.Context.ToPixels(height);
+					recyclerView.Measure(
+						AView.MeasureSpec.MakeMeasureSpec(pixelWidth, global::Android.Views.MeasureSpecMode.Exactly),
+						AView.MeasureSpec.MakeMeasureSpec(pixelHeight, global::Android.Views.MeasureSpecMode.Exactly));
+					recyclerView.Layout(0, 0, pixelWidth, pixelHeight);
+
+					var holder = Assert.IsType<TemplatedItemViewHolder>(recyclerView.FindViewHolderForAdapterPosition(0));
+					var grid = Assert.IsType<Grid>(holder.View);
+					var button = Assert.IsType<Button>(grid.Children[3]);
+					var platformButton = Assert.IsAssignableFrom<IButtonHandler>(button.Handler).PlatformView;
+					Assert.NotNull(platformButton.Layout);
+
+					int contentHeight = System.Math.Max(platformButton.MinimumHeight,
+						platformButton.Layout.Height + platformButton.CompoundPaddingTop + platformButton.CompoundPaddingBottom);
+					Assert.InRange(platformButton.Height, contentHeight - 1, contentHeight + 1);
+					Assert.InRange(holder.ItemView.Height, contentHeight - 1, contentHeight + 1);
+					if (!double.IsPositiveInfinity(maximumWidth))
+					{
+						Assert.True(platformButton.Context.FromPixels(platformButton.Width) <= maximumWidth + 1);
+					}
+
+					return holder.ItemView.Height;
+				}
+
+				var collectionView = CreateCollectionView();
+				var handler = CreateHandler<CollectionViewHandler>(collectionView);
+				int portraitHeight = MeasureAndLayout(handler.PlatformView, 300, 600);
+				Assert.True(portraitHeight > 0);
+
+				for (int iteration = 0; iteration < 2; iteration++)
+				{
+					int landscapeHeight = MeasureAndLayout(handler.PlatformView, 600, 300);
+					Assert.True(landscapeHeight < portraitHeight, "Wider items should need less height for wrapped text.");
+
+					Assert.Equal(portraitHeight, MeasureAndLayout(handler.PlatformView, 300, 600));
+				}
+
+				((IElementHandler)handler).DisconnectHandler();
+			});
+		}
+
 		[Theory]
 		[InlineData(ItemsLayoutOrientation.Vertical, ItemSizingStrategy.MeasureAllItems)]
 		[InlineData(ItemsLayoutOrientation.Vertical, ItemSizingStrategy.MeasureFirstItem)]
