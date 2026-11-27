@@ -47,8 +47,18 @@ namespace Microsoft.Maui.Handlers
 
 			if (!double.IsFinite(widthConstraint) ||
 				VirtualView is not { HorizontalLayoutAlignment: LayoutAlignment.Fill } button ||
+				button.Parent is not IGridLayout { HorizontalLayoutAlignment: LayoutAlignment.Fill } grid ||
 				PlatformView is not { MaxLines: > 1, MaxWidth: > 0 } platformButton ||
 				MauiContext?.Context is not { } context)
+			{
+				return desiredSize;
+			}
+
+			// Auto columns and content-sized parents must keep the native width and its matching wrapped height.
+			int column = grid.GetColumn(button);
+			if (grid.GetColumnSpan(button) != 1 ||
+				(grid.ColumnDefinitions.Count > 0 &&
+				 !grid.ColumnDefinitions[Math.Min(column, grid.ColumnDefinitions.Count - 1)].Width.IsStar))
 			{
 				return desiredSize;
 			}
@@ -66,7 +76,7 @@ namespace Microsoft.Maui.Handlers
 				return desiredSize;
 			}
 
-			// A bounded fill button will be arranged past the native cap. Measure its wrapped height at that width.
+			// The Grid assigns this bounded star-column width to its fill button.
 			int heightSpec = context.CreateMeasureSpec(heightConstraint, button.Height, button.MinimumHeight, button.MaximumHeight);
 			platformButton.Measure(MeasureSpecMode.Exactly.MakeMeasureSpec(width), heightSpec);
 			return context.FromPixels(width, platformButton.MeasuredHeight);

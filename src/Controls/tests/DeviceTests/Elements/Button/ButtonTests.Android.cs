@@ -9,6 +9,7 @@ using Microsoft.Maui.Controls;
 using Microsoft.Maui.DeviceTests.Stubs;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Hosting;
+using Microsoft.Maui.Layouts;
 using Microsoft.Maui.Platform;
 using Xunit;
 
@@ -16,6 +17,50 @@ namespace Microsoft.Maui.DeviceTests
 {
 	public partial class ButtonTests
 	{
+		[Theory]
+		[InlineData(false)]
+		[InlineData(true)]
+		public async Task WrappedButtonPreservesContentSizedLayout(bool useAutoColumn)
+		{
+			var button = new Button
+			{
+				LineBreakMode = LineBreakMode.WordWrap,
+				Text = "A long button text that must wrap onto multiple lines. " +
+					"The available width must not expand a content-sized parent. " +
+					"The button must retain both its natural width and the height needed for all its text."
+			};
+
+			var handler = await CreateHandlerAsync<ButtonHandler>(button);
+			await InvokeOnMainThreadAsync(() =>
+			{
+				ILayoutManager layoutManager;
+				if (useAutoColumn)
+				{
+					var grid = new Grid
+					{
+						ColumnDefinitions = { new ColumnDefinition(GridLength.Auto) },
+						Children = { button }
+					};
+					layoutManager = new GridLayoutManager(grid);
+				}
+				else
+				{
+					var stack = new VerticalStackLayout
+					{
+						HorizontalOptions = LayoutOptions.Center,
+						Children = { button }
+					};
+					layoutManager = new VerticalStackLayoutManager(stack);
+				}
+
+				var naturalSize = handler.GetDesiredSize(double.PositiveInfinity, double.PositiveInfinity);
+				var size = layoutManager.Measure(naturalSize.Width * 2, double.PositiveInfinity);
+
+				Assert.Equal(naturalSize.Width, size.Width, precision: 2);
+				Assert.Equal(naturalSize.Height, size.Height, precision: 2);
+			});
+		}
+
 		AppCompatButton GetPlatformButton(ButtonHandler buttonHandler) =>
 			(AppCompatButton)buttonHandler.PlatformView;
 
