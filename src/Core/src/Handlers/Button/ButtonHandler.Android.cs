@@ -5,6 +5,7 @@ using Android.Graphics.Drawables;
 using Android.Views;
 using Google.Android.Material.Button;
 using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Primitives;
 using AView = Android.Views.View;
 
 namespace Microsoft.Maui.Handlers
@@ -37,11 +38,38 @@ namespace Microsoft.Maui.Handlers
 				SoundEffectsEnabled = false
 			};
 
-			// MAUI's MaximumWidth controls measurement. The theme's maxWidth can otherwise
-			// measure wrapped text at a narrower width than the button is arranged at.
-			platformButton.SetMaxWidth(int.MaxValue);
-
 			return platformButton;
+		}
+
+		public override Size GetDesiredSize(double widthConstraint, double heightConstraint)
+		{
+			var desiredSize = base.GetDesiredSize(widthConstraint, heightConstraint);
+
+			if (!double.IsFinite(widthConstraint) ||
+				VirtualView is not { HorizontalLayoutAlignment: LayoutAlignment.Fill } button ||
+				PlatformView is not { MaxLines: > 1, MaxWidth: > 0 } platformButton ||
+				MauiContext?.Context is not { } context)
+			{
+				return desiredSize;
+			}
+
+			int maxWidth = platformButton.MaxWidth;
+			if (desiredSize.Width != context.FromPixels(maxWidth))
+			{
+				return desiredSize;
+			}
+
+			int widthSpec = context.CreateMeasureSpec(widthConstraint, button.Width, button.MinimumWidth, button.MaximumWidth);
+			int width = AView.MeasureSpec.GetSize(widthSpec);
+			if (AView.MeasureSpec.GetMode(widthSpec) != MeasureSpecMode.AtMost || width <= maxWidth)
+			{
+				return desiredSize;
+			}
+
+			// A bounded fill button will be arranged past the native cap. Measure its wrapped height at that width.
+			int heightSpec = context.CreateMeasureSpec(heightConstraint, button.Height, button.MinimumHeight, button.MaximumHeight);
+			platformButton.Measure(MeasureSpecMode.Exactly.MakeMeasureSpec(width), heightSpec);
+			return context.FromPixels(width, platformButton.MeasuredHeight);
 		}
 
 		protected override void ConnectHandler(MaterialButton platformView)
